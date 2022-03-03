@@ -4,8 +4,8 @@ import numpy
 from qiskit import QuantumCircuit
 from qiskit.result import Result, marginal_counts
 
-from qtom import _constants
-from qtom.basis import BaseMeasurementBasis, PauliMeasurementBasis
+from sqt import _constants
+from sqt.basis import BaseMeasurementBasis, PauliMeasurementBasis
 
 
 def compute_frequencies(

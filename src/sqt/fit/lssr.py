@@ -5,9 +5,9 @@ import scipy.linalg
 from qiskit import BasicAer, QuantumCircuit, execute
 from qiskit.result import Result
 
-from qtom import _constants
-from qtom.basis import BaseMeasurementBasis, PauliMeasurementBasis
-from qtom.fit._helpers import _couter, compute_frequencies
+from sqt import _constants
+from sqt.basis import BaseMeasurementBasis, PauliMeasurementBasis
+from sqt.fit._helpers import _couter, compute_frequencies
 
 
 def _make_positive_semidefinite(

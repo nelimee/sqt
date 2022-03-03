@@ -2,7 +2,7 @@ import typing as ty
 
 from qiskit import QuantumCircuit
 
-from .basis import BaseMeasurementBasis
+from sqt.basis import BaseMeasurementBasis
 
 
 def _parallelise_one_qubit_tomography_circuits(

@@ -3,7 +3,7 @@ import typing as ty
 import numpy
 from qiskit import QuantumCircuit
 
-from .base import BaseMeasurementBasis
+from sqt.basis.base import BaseMeasurementBasis
 
 
 class TetrahedralMeasurementBasis(BaseMeasurementBasis):

@@ -4,8 +4,8 @@ import typing as ty
 import numpy
 from qiskit import BasicAer, QuantumCircuit, execute
 
-from qtom import _constants
-from qtom.fit._helpers import _couter
+from sqt import _constants
+from sqt.fit._helpers import _couter
 
 
 class BaseMeasurementBasis(abc.ABC):

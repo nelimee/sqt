@@ -4,9 +4,9 @@ import numpy
 from qiskit import QuantumCircuit
 from qiskit.result import Result
 
-from qtom import _constants
-from qtom.basis import BaseMeasurementBasis, PauliMeasurementBasis
-from qtom.fit._helpers import compute_frequencies
+from sqt import _constants
+from sqt.basis import BaseMeasurementBasis, PauliMeasurementBasis
+from sqt.fit._helpers import compute_frequencies
 
 
 def frequencies_to_pauli_reconstruction(

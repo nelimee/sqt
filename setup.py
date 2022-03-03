@@ -32,7 +32,7 @@ setup(  # This is the name of your project. The first time you publish this
     # There are some restrictions on what makes a valid project name
     # specification here:
     # https://packaging.python.org/specifications/core-metadata/#name
-    name="qtom",  # Required
+    name="sqt",  # Required
     # Versions should comply with PEP 440:
     # https://www.python.org/dev/peps/pep-0440/
     #
@@ -44,7 +44,7 @@ setup(  # This is the name of your project. The first time you publish this
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
     description=(
-        "Quantum TOMography package developped during the "
+        "Single Qubit Tomography package developped during the "
         "Quantum Computing Summer School 2021 at Los Alamos National"
         "Laboratory."
     ),  # Optional
@@ -75,7 +75,7 @@ setup(  # This is the name of your project. The first time you publish this
     # This field corresponds to the "Home-Page" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#home-page
     # -optional
-    url="https://github.com/nelimee/qtom",  # Optional
+    url="https://github.com/nelimee/sqt",  # Optional
     # This should be your name or the name of the organization which owns the
     # project.
     author="Adrien Suau",  # Optional
@@ -105,7 +105,13 @@ setup(  # This is the name of your project. The first time you publish this
     ],
     # This field adds keywords for your project which will appear on the
     # project page. What does your project relate to?
-    keywords=["quantum", "algorithm", "tomography", "state"],  # Optional
+    keywords=[
+        "quantum",
+        "algorithm",
+        "tomography",
+        "state",
+        "single qubit",
+    ],  # Optional
     # You can just specify package directories manually here if your project is
     # simple. Or you can use find_packages().
     #
@@ -135,15 +141,7 @@ setup(  # This is the name of your project. The first time you publish this
     # Similar to `install_requires` above, these must be valid existing
     # projects.
     extras_require={  # Optional
-        "dev": [
-            "black",
-            "python-lsp-server[flake8,mccabe,pycodestyle,pydocstyle,pyflakes,pylint,rope]",
-            "mypy-ls",
-            "pyls-isort",
-            "python-lsp-black",
-            "pyls-flake8",
-            "pyls-memestra",
-        ],
+        "dev": ["black"],
     },
     # If there are data files included in your packages that need to be
     # installed, specify them here.
@@ -176,8 +174,8 @@ setup(  # This is the name of your project. The first time you publish this
     # maintainers, and where to support the project financially. The key is
     # what's used to render the link text on PyPI.
     project_urls={  # Optional
-        "Bug Reports": "https://github.com/nelimee/qtom/issues",
-        "Source": "https://github.com/nelimee/qtom",
+        "Bug Reports": "https://github.com/nelimee/sqt/issues",
+        "Source": "https://github.com/nelimee/sqt",
         "Collaborator": "https://cerfacs.fr/en",
         "Funding": "https://www.lanl.gov/",
     },
