@@ -41,16 +41,22 @@ def frequencies_to_mle_reconstruction(
         projectors: ty.List[numpy.ndarray],
     ) -> float:
         # Avoid non-physical states that confuse the optimiser
-        if numpy.linalg.norm(s) > 1:
-            # TODO: make this a little bit smoother.
-            # Idea: project s on the sphere, do the computation, and add a penalty
-            # that scales with the distance outside of the sphere.
-            return float("inf")
+        penalty_factor: float = 0.0
+        s_norm: float = numpy.linalg.norm(s)
+        if s_norm > 1:
+            # A simple
+            #     return float('inf')
+            # does not work here, probably because such a brutal and
+            # non-continuous change confuses the optimiser. Instead,
+            # we apply a very strong penalty for exerything that is
+            # outside the Bloch sphere.
+            penalty_factor = 1 - s_norm
+            s /= s_norm
         accumulation = 0
         rho = bloch_vector_to_density_matrix(s)
         for freq, proj in zip(observed_frequencies, projectors):
             accumulation += freq * numpy.log(numpy.trace(rho @ proj))
-        return -numpy.real_if_close(accumulation)
+        return -numpy.real_if_close(accumulation) + numpy.exp(1e10 * penalty_factor)
 
     def inverse_likelyhood_grad(
         s: numpy.ndarray,
@@ -63,8 +69,7 @@ def frequencies_to_mle_reconstruction(
         rho = bloch_vector_to_density_matrix(s)
         grad_density = numpy.zeros_like(rho)
         for freq, proj in zip(observed_frequencies, projectors):
-            grad_density += proj.T * freq / numpy.trace(rho @ proj)
-        grad_density = -grad_density
+            grad_density -= proj * freq / numpy.trace(rho @ proj)
         grad = numpy.real_if_close(
             numpy.array(
                 [
@@ -103,9 +108,8 @@ def frequencies_to_mle_reconstruction(
             jac=lambda s: inverse_likelyhood_grad(s, observed_frequencies, projectors),
             constraints=[ineq_constraint],
             method="SLSQP",
-            options={"ftol": 1e-9},
+            options={"ftol": 1e-12},
         )
-        print(result.__dict__)
         density_matrix: numpy.ndarray = bloch_vector_to_density_matrix(result.x)
         density_matrices.append(density_matrix)
     return density_matrices
