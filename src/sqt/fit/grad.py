@@ -12,7 +12,6 @@ in the line_search function. Using the algorithm described in
 https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf
 might solve the issue, in which case the convergence speed will likely be much better.
 """
-
 import typing as ty
 
 import numpy
@@ -84,7 +83,7 @@ def negative_log_likelyhood_gradient(
         proj_vec = projector_vectors[k]
         denominator = numpy.vdot(proj_vec, density_matrix @ proj_vec)
         if numpy.real(denominator) >= 1e-6:
-            gradient -= (freq / denominator) * projector_matrices[k].T
+            gradient -= (freq / denominator) * projector_matrices[k]
     return gradient
 
 
@@ -123,8 +122,8 @@ def line_search(
     observed_frequencies: numpy.ndarray,
     gradient: numpy.ndarray,
     previous_gradient_step: float,
-    alpha: float,
-    beta: float,
+    c: float = 0.5,
+    gamma: float = 0.9,
 ) -> float:
     """Perform a backtracking line search to find the best gradient step.
 
@@ -163,41 +162,35 @@ def line_search(
     :param alpha: unused parameter.
     :param beta: unused parameter.
     """
-    return 0.001
-    gradient_step: float = previous_gradient_step
     current_negative_log_likelyhood = negative_log_likelyhood(
-        project(density_matrix), projector_matrices, observed_frequencies
+        density_matrix, projector_matrices, observed_frequencies
     )
-
-    new_density_matrix = project(density_matrix - gradient_step * gradient)
-    descent_direction = new_density_matrix - density_matrix
-    new_negative_log_likelyhood = negative_log_likelyhood(
-        new_density_matrix, projector_matrices, observed_frequencies
+    descent_direction: numpy.ndarray = (
+        project(density_matrix - gradient) - density_matrix
     )
-    while (
-        new_negative_log_likelyhood
-        > current_negative_log_likelyhood
-        # - gradient_step * frobenius_inner_product(gradient, descent_direction)
-        - gradient_step * numpy.linalg.norm(descent_direction, ord="fro") ** 2 / 2
-    ):
-        gradient_step *= beta
-        new_density_matrix = project(density_matrix - gradient_step * gradient)
-        descent_direction = new_density_matrix - density_matrix
-        if frobenius_inner_product(gradient, descent_direction) >= 0:
-            print("Continuing to lower down gradient_step")
-            continue
-        new_negative_log_likelyhood = negative_log_likelyhood(
-            new_density_matrix, projector_matrices, observed_frequencies
+    gradient_scalar_direction: float = numpy.vdot(gradient, descent_direction)
+    # We want gamma**s to go up to very small values, let say 10^{-16}. In this case,
+    # the maximum value of s that should be tested is:
+    max_s: int = int(numpy.ceil(-16 / numpy.log10(gamma)))
+    for s in range(max_s):
+        tentative_point: numpy.ndarray = density_matrix + gamma ** s * descent_direction
+        tentative_negative_log_likelyhood = negative_log_likelyhood(
+            tentative_point, projector_matrices, observed_frequencies
         )
-        print(f"Step = {gradient_step}")
-    return gradient_step
+        if (
+            tentative_negative_log_likelyhood - current_negative_log_likelyhood
+            <= c * gamma ** s * gradient_scalar_direction
+        ):
+            return gamma ** s
+    # If the line search failed, return an arbitrary step and hope for the best
+    return 1e-5
 
 
 def reconstruct_density_matrix(
     empirical_frequencies: ty.Union[numpy.ndarray, ty.List[float]],
     projector_vectors: ty.List[numpy.ndarray],
     max_iter: int = 10000,
-    eps: float = 1e-6,
+    eps: float = 1e-9,
     alpha: float = 1e-4,
     beta: float = 0.5,
     verbose: bool = False,
@@ -257,8 +250,14 @@ def reconstruct_density_matrix(
             alpha,
             beta,
         )
+
+        # Following https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf
+        # we should go with the descent direction and not directly with the gradient
+        descent_direction: numpy.ndarray = (
+            project(density_matrix - gradient) - density_matrix
+        )
         # Perform gradient descent
-        updated_density_matrix = density_matrix - gradient_step * gradient
+        updated_density_matrix = density_matrix + gradient_step * descent_direction
 
         # Normalise the matrix to avoid descent issues by removing the least
         # important eigenvalues in terms of magnitude and rescaling the other
@@ -273,9 +272,9 @@ def reconstruct_density_matrix(
 
         if verbose:
             print(f"{it+1} / {max_iter}  --->  {movement_norm}", end="\r", flush=True)
-
         if movement_norm < eps:
             break
+
     if movement_norm > warning_threshold:
         print(f"Warning! Gradient descent finished with a step of {movement_norm}.")
     if verbose:
