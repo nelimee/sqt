@@ -71,7 +71,7 @@ def compute_frequencies(
     frequencies: ty.List[ty.Dict[str, Counts]] = [dict() for _ in range(qubit_number)]
     tc_name: str = tomographied_circuit.name
 
-    for basis_change_name in map(lambda qc: qc.name, basis.basis_change_circuits):
+    for basis_change_name in basis.basis_change_circuit_names:
         parallelised_circuit_name: str = get_parallelised_circuit_name(
             get_tomography_circuit_name(tc_name, basis_change_name),
             qubit_number,
