@@ -63,6 +63,7 @@ def frequencies_to_lssr_reconstruction(
     frequencies: ty.List[ty.Dict[str, Counts]],
     basis: BaseMeasurementBasis,
     epsilon: float = 1e-3,
+    verbose: bool = False,
 ) -> ty.List[numpy.ndarray]:
     """Compute the density matrix from the given frenquencies.
 
@@ -94,6 +95,7 @@ def frequencies_to_lssr_reconstruction(
         non-necessarily semi-definite positive matrix rho, if
         || rho - proj(rho) || > epsilon where proj(.) is a projector to the space
         of semi-definite positive matrices, then a warning will be issued.
+    :param verbose: if True, print warnings and information about the optimisation.
     :return: the reconstructed density matrix.
     """
     density_matrices: ty.List[numpy.ndarray] = []
@@ -114,13 +116,12 @@ def frequencies_to_lssr_reconstruction(
         b = numpy.array(b_entries)
         # Solving the system
         rho_vec, residues, rank, s = scipy.linalg.lstsq(A, b)
-        print(residues, rank, s)
         density_matrix = rho_vec.reshape((2, 2))
         # Project the density matrix to the closest SDP matrix.
         sdp_density_matrix = _make_positive_semidefinite(density_matrix)
         # Issue a warning if the projection changed significantly the density matrix.
         sdp_error = numpy.linalg.norm(density_matrix - sdp_density_matrix)
-        if sdp_error > epsilon:
+        if verbose and sdp_error > epsilon:
             print(
                 "Warning: the returned density matrix has been changed "
                 "significantly to be SDP: ||original - sdp||_2 = "
