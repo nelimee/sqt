@@ -1,6 +1,6 @@
 import numpy
 
-I = numpy.eye(2, dtype=numpy.complex_)
-X = numpy.array([[0, 1], [1, 0]], dtype=numpy.complex_)
-Y = 1.0j * numpy.array([[0, 1], [-1, 0]], dtype=numpy.complex_)
-Z = numpy.array([[1, 0], [0, -1]], dtype=numpy.complex_)
+I: numpy.ndarray = numpy.eye(2, dtype=complex)
+X: numpy.ndarray = numpy.array([[0, 1], [1, 0]], dtype=complex)
+Y: numpy.ndarray = 1.0j * numpy.array([[0, 1], [-1, 0]], dtype=complex)
+Z: numpy.ndarray = numpy.array([[1, 0], [0, -1]], dtype=complex)

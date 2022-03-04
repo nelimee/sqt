@@ -5,7 +5,7 @@ import numpy
 from qiskit import BasicAer, QuantumCircuit, execute
 
 from sqt import _constants
-from sqt.fit._helpers import _couter
+from sqt._maths_helpers import couter
 
 
 class BaseMeasurementBasis(abc.ABC):
@@ -17,6 +17,7 @@ class BaseMeasurementBasis(abc.ABC):
         self._projector_states: ty.List[numpy.ndarray] = list()
         self._projectors: ty.List[ty.Tuple[numpy.ndarray, numpy.ndarray]] = list()
 
+    @property
     @abc.abstractmethod
     def basis_change_circuits(self) -> ty.Iterable[QuantumCircuit]:
         """Return an interable on the basis change QuantumCircuit instances.
@@ -25,7 +26,7 @@ class BaseMeasurementBasis(abc.ABC):
         circuits that are needed to perform the different measurements in
         the desired basis.
 
-        :return: an interable on the basis change QuantumCircuit instance.
+        :return: an iterable on the basis change QuantumCircuit instances.
         """
         pass
 
@@ -41,12 +42,6 @@ class BaseMeasurementBasis(abc.ABC):
         pass
 
     @property
-    @abc.abstractmethod
-    def qubit_number(self) -> int:
-        """Return the number of qubits the basis is defined on."""
-        pass
-
-    @property
     def projector_states(self) -> ty.Iterable[numpy.ndarray]:
         """Return the states that represent the measurement basis.
 
@@ -55,12 +50,11 @@ class BaseMeasurementBasis(abc.ABC):
 
         U_{i in range(self.size)} {|phi_i><phi_i|, I - |phi_i><phi_i|}
 
-        This only works for 1-qubit basis for the moment.
+        This only works for 1-qubit basis.
         """
-        assert self.qubit_number == 1, "projector_states only works for 1-qubit basis."
         if not self._projector_states:
             simulator = BasicAer.get_backend("statevector_simulator")
-            for basis_change_circuit in self.basis_change_circuits():
+            for basis_change_circuit in self.basis_change_circuits:
                 inverted_basis_change_circuit = basis_change_circuit.inverse()
                 state: numpy.ndarray = (
                     execute(inverted_basis_change_circuit, simulator)
@@ -74,15 +68,21 @@ class BaseMeasurementBasis(abc.ABC):
     def projectors(self) -> ty.Iterable[ty.Tuple[numpy.ndarray, numpy.ndarray]]:
         """Return the POVM projectors used for this basis.
 
-        This only works for 1-qubit basis for the moment.
+        Each tuple corresponds to one projection basis, with the first entry of
+        the tuple being a projector on a given state and the second entry being
+        an orthogonal projector.
+
+        This only works for 1-qubit basis.
 
         :return: the 1-qubit projectors implemented by this basis.
         """
-        assert self.qubit_number == 1, "projectors only works for 1-qubit basis."
         if not self._projectors:
             for state in self.projector_states:
-                self._projectors.append(
-                    (_couter(state, state), _constants.I - self._projectors[-1])
-                )
-
+                proj: numpy.ndarray = couter(state, state)
+                orth: numpy.ndarray = _constants.I - proj
+                self._projectors.append((proj, orth))
         yield from self._projectors
+
+    @property
+    def basis_change_circuit_names(self) -> ty.Iterator[str]:
+        yield from (c.name for c in self.basis_change_circuits)

@@ -96,6 +96,7 @@ class EquidistantMeasurementBasis(BaseMeasurementBasis):
         super().__init__(f"equidistant-{approximative_point_number}")
         self._approximative_point_number: int = approximative_point_number
 
+    @property
     def basis_change_circuits(self) -> ty.List[QuantumCircuit]:
         """Return approximately n basis changes that are approximately equidistant.
 

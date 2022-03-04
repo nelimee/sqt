@@ -1,13 +1,28 @@
+"""Implement a projected gradient method from https://arxiv.org/pdf/1609.07881.pdf.
+
+This module implements a projected gradient descent to minimise the Maximum Likelihood
+Estimator (MLE).
+
+The projection is done according to Appendix C.1. of the main paper linked above
+and has been inspired by the code
+https://github.com/lanl/quantum_algorithms/blob/master/subroutines/quantum_tomography/qtml.jl
+
+The gradient descent currently does not implement line-search due to issues described
+in the line_search function. Using the algorithm described in 
+https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf
+might solve the issue, in which case the convergence speed will likely be much better.
+"""
+
 import typing as ty
 
 import numpy
-from qiskit import BasicAer, QuantumCircuit, execute
+from qiskit import QuantumCircuit
 from qiskit.result import Result
-from scipy.optimize import Bounds, minimize
 
-from sqt import _constants
-from sqt.basis import BaseMeasurementBasis, PauliMeasurementBasis
-from sqt.fit._helpers import _couter, compute_frequencies
+from sqt.basis.base import BaseMeasurementBasis
+from sqt.fit._helpers import compute_frequencies
+from sqt._maths_helpers import couter, get_orthogonal_state
+from sqt.counts import Counts
 
 
 def frobenius_inner_product(A: numpy.ndarray, B: numpy.ndarray) -> numpy.ndarray:
@@ -116,6 +131,7 @@ def line_search(
     The backtracking line search try to find a good gradient step (or learning
     rate) in order to fullfil the Wolfe condition.
 
+    :warning:
     This method is currently not working correctly and systematically returns
     a value of 0.001 that has been empirically determined as sufficiently small
     for the optimisation problems I had. This value might be too large for
@@ -132,6 +148,8 @@ def line_search(
     gradient anymore but goes **backward**. I suspect this is due to some
     conditions that are not fulfilled by the problem (convexity, continuity,
     condition on the projection, ...?), but I do not have any proof yet.
+
+    See https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf
 
     :param density_matrix: the current trial density matrix.
     :param projector_matrices: the projectors used to measure the given
@@ -219,9 +237,9 @@ def reconstruct_density_matrix(
     dimension = numpy.size(projector_vectors[0])
     # Update the projectors to have normalised vectors
     projectors = [proj / numpy.linalg.norm(proj) for proj in projector_vectors]
-    projector_matrices = [_couter(proj, proj) for proj in projectors]
-    gradient_step: float = 1
-
+    projector_matrices = [couter(proj, proj) for proj in projectors]
+    gradient_step: float = 1.0
+    movement_norm: float = 0.0
     density_matrix = numpy.eye(dimension, dtype=numpy.complex_) / dimension
 
     for it in range(max_iter):
@@ -248,7 +266,7 @@ def reconstruct_density_matrix(
         updated_density_matrix = project(updated_density_matrix)
         # Compute the difference between the previous density matrix estimate and
         # the new one. This is usefull for the stopping criterion.
-        movement_norm: float = (
+        movement_norm = (
             numpy.linalg.norm(updated_density_matrix - density_matrix, ord="fro") / 2
         )
         density_matrix = updated_density_matrix
@@ -272,9 +290,9 @@ def reconstruct_density_matrix(
 
 
 def frequencies_to_grad_reconstruction(
-    frequencies: ty.Dict[str, ty.Dict[str, float]],
+    frequencies: ty.List[ty.Dict[str, Counts]],
     basis: BaseMeasurementBasis,
-) -> numpy.ndarray:
+) -> ty.List[numpy.ndarray]:
     """Compute the density matrix from the given frenquencies.
 
     This function uses the Maximum Likelyhood Estimation method and a
@@ -282,52 +300,40 @@ def frequencies_to_grad_reconstruction(
     cost function. Details about the actual optimisation process can be
     found in the reconstruct_density_matrix function.
 
-    :param frenquencies: the estimated frequencies as a mapping
+    :param frenquencies: the estimated frequencies as a list of mappings
         {basis_change_str -> {state -> frequency}} where basis_change_str is
         the name of the quantum circuit performing the basis change, state is
         either "0" or "1" for 1-qubit and frequency is the estimated frequency.
     :param basis: the tomography basis used.
     :return: the reconstructed density matrix.
     """
-    # Build the projectors and the observed frequencies
-    simulator = BasicAer.get_backend("statevector_simulator")
-    projectors: ty.List[numpy.ndarray] = list()
-    observed_frequencies: ty.List[float] = list()
-    basis_change_circuits = list(basis.basis_change_circuits())
-    for basis_change_circuit in basis_change_circuits:
-        inverted_basis_change_circuit = basis_change_circuit.inverse()
-        state: numpy.ndarray = (
-            execute(inverted_basis_change_circuit, simulator)
-            .result()
-            .get_statevector(inverted_basis_change_circuit.name)
+    density_matrices: ty.List[numpy.ndarray] = []
+    # This reconstruction could potentially be performed in parallel.
+    # Left as a TODO for the moment.
+    for freqs in frequencies:
+        # Build the projectors and the observed frequencies
+        projectors: ty.List[numpy.ndarray] = list()
+        observed_frequencies: ty.List[float] = list()
+        for basis_change_name, state_projector in zip(
+            basis.basis_change_circuit_names, basis.projector_states
+        ):
+            projectors.append(state_projector)
+            observed_frequencies.append(freqs[basis_change_name].get(0, 0))
+            projectors.append(get_orthogonal_state(state_projector))
+            observed_frequencies.append(freqs[basis_change_name].get(1, 0))
+        # Solving the system
+        density_matrices.append(
+            reconstruct_density_matrix(observed_frequencies, projectors)
         )
-        projector_matrix = numpy.outer(state.T.conj(), state)
-        inverse_projector_matrix = _constants.I - projector_matrix
-        ra = numpy.sqrt(inverse_projector_matrix[0, 0])
-        rb = numpy.sqrt(inverse_projector_matrix[1, 1])
-        thetaa, thetab = -numpy.angle(state[1]), -numpy.angle(state[1]) + numpy.angle(
-            inverse_projector_matrix[0, 1]
-        )
-        orthogonal_state = numpy.array(
-            [ra * numpy.exp(1.0j * thetaa), rb * numpy.exp(1.0j * thetab)],
-            dtype=numpy.complex_,
-        )
-
-        projectors.append(state)
-        projectors.append(orthogonal_state)
-        observed_frequencies.append(frequencies[basis_change_circuit.name].get("0", 0))
-        observed_frequencies.append(frequencies[basis_change_circuit.name].get("1", 0))
-    # Solving the system
-    return reconstruct_density_matrix(observed_frequencies, projectors)
+    return density_matrices
 
 
 def post_process_tomography_results_grad(
     result: Result,
     tomographied_circuit: QuantumCircuit,
-    qubit_index: ty.Optional[int] = None,
-    is_parallel: bool = False,
-    basis: ty.Optional[BaseMeasurementBasis] = None,
-) -> numpy.ndarray:
+    basis: BaseMeasurementBasis,
+    qubit_number: int = 1,
+) -> ty.List[numpy.ndarray]:
     """
     Compute and return the density matrix computed via state tomography.
 
@@ -337,18 +343,14 @@ def post_process_tomography_results_grad(
         the circuits returned by the one_qubit_tomography_circuits function.
     :param tomographied_circuit: the quantum circuit instance that is currently
         tomographied. Used to recover the circuit name.
-    :param qubit_index: index of the qubit used to perform the tomography
-        experiments. If is_parallel is True, this is the index of the qubit
-        that will be post-processed.
-    :param is_parallel: True if the given Result instance has been obtained
-        from a parallel execution, else False. If set to True, qubit_index
-        should be set to the index of the qubit we want the results on.
+
+    :param basis: the basis in which the measurements will be done.
+    :param qubit_number: the number of qubits the parallel 1-qubit tomography
+        should be performed on. Default to 1, i.e. no parallel execution.
     :return: the 2 by 2 density matrix representing the prepared quantum state.
     """
-    if basis is None:
-        basis = PauliMeasurementBasis()
     # Compute the frequencies
-    frequencies: ty.Dict[str, ty.Dict[str, float]] = compute_frequencies(
-        result, tomographied_circuit, qubit_index, is_parallel, basis
+    frequencies: ty.List[ty.Dict[str, Counts]] = compute_frequencies(
+        result, tomographied_circuit, basis, qubit_number
     )
     return frequencies_to_grad_reconstruction(frequencies, basis)

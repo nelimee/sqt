@@ -2,7 +2,24 @@ import typing as ty
 
 from qiskit import QuantumCircuit
 
-from sqt.basis import BaseMeasurementBasis
+from sqt.basis.base import BaseMeasurementBasis
+
+TOMOGRAPHY_CIRCUIT_NAME_FORMAT: str = (
+    "{tomographied_circuit_name}_{basis_change_circuit_name}"
+)
+PARALLELISED_CIRCUIT_NAME_FORMAT: str = "{base_circuit_name}_{qubit_number}"
+
+
+def get_tomography_circuit_name(name: str, basis_change_name: str) -> str:
+    return TOMOGRAPHY_CIRCUIT_NAME_FORMAT.format(
+        tomographied_circuit_name=name, basis_change_circuit_name=basis_change_name
+    )
+
+
+def get_parallelised_circuit_name(base_name: str, qubit_number: int) -> str:
+    return PARALLELISED_CIRCUIT_NAME_FORMAT.format(
+        base_circuit_name=base_name, qubit_number=qubit_number
+    )
 
 
 def _parallelise_one_qubit_tomography_circuits(
@@ -23,7 +40,11 @@ def _parallelise_one_qubit_tomography_circuits(
     """
     quantum_circuits: ty.List[QuantumCircuit] = list()
     for circuit in one_qubit_quantum_circuits:
-        qc = QuantumCircuit(qubit_number, qubit_number, name=circuit.name)
+        qc = QuantumCircuit(
+            qubit_number,
+            qubit_number,
+            name=get_parallelised_circuit_name(circuit.name, qubit_number),
+        )
         for qubit_index in range(qubit_number):
             qc.compose(
                 circuit, inplace=True, qubits=[qubit_index], clbits=[qubit_index]
@@ -35,8 +56,7 @@ def _parallelise_one_qubit_tomography_circuits(
 def one_qubit_tomography_circuits(
     tomographied_circuit: QuantumCircuit,
     basis: BaseMeasurementBasis,
-    is_parallel: bool = False,
-    qubit_number: ty.Optional[int] = None,
+    qubit_number: int = 1,
 ) -> ty.List[QuantumCircuit]:
     """Return the quantum circuits needed to perform a state tomography.
 
@@ -46,30 +66,27 @@ def one_qubit_tomography_circuits(
 
     :param tomographied_circuit: a quantum circuit that prepares the state to
         be tomographied.
-    :param is_parallel: if True, the 1-qubit tomography experiment is
-        duplicated in parallel on qubit_number qubits. Else, it is only
-        performed on 1 qubit.
     :param qubit_number: the number of qubits the parallel 1-qubit tomography
-        should be performed on. Not used if is_parallel is False. Should be
-        different from None if is_parallel is True.
+        should be performed on. Default to 1, i.e. no parallel execution.
     :param basis: the basis in which the measurements will be done.
     :return: the quantum circuits that should be executed to perform the state
         tomography in the given basis.
     """
     quantum_circuits: ty.List[QuantumCircuit] = list()
 
-    for basis_change_circuit in basis.basis_change_circuits():
+    for basis_change_circuit in basis.basis_change_circuits:
         qc = QuantumCircuit(
-            1, 1, name=f"{tomographied_circuit.name}_{basis_change_circuit.name}"
+            1,
+            1,
+            name=get_tomography_circuit_name(
+                tomographied_circuit.name, basis_change_circuit.name
+            ),
         )
         qc.compose(tomographied_circuit, inplace=True)
         qc.compose(basis_change_circuit, inplace=True)
         qc.measure(0, 0)
         quantum_circuits.append(qc)
-    if is_parallel:
-        assert (
-            qubit_number is not None
-        ), "qubit_number should not be None when is_parallel is True."
+    if qubit_number > 1:
         quantum_circuits = _parallelise_one_qubit_tomography_circuits(
             quantum_circuits, qubit_number
         )

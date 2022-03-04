@@ -1,23 +1,21 @@
 import typing as ty
 
 import numpy
-from qiskit import BasicAer, QuantumCircuit, execute
+from qiskit import QuantumCircuit
 from qiskit.result import Result
-from scipy.optimize import Bounds, minimize
+from scipy.optimize import minimize
 
 from sqt import _constants
-from sqt.basis import BaseMeasurementBasis, PauliMeasurementBasis
-from sqt.fit._helpers import (
-    _bloch_vector_to_density_matrix,
-    _couter,
-    compute_frequencies,
-)
+from sqt.basis.base import BaseMeasurementBasis
+from sqt.fit._helpers import compute_frequencies
+from sqt._maths_helpers import bloch_vector_to_density_matrix
+from sqt.counts import Counts
 
 
 def frequencies_to_mle_reconstruction(
-    frequencies: ty.Dict[str, ty.Dict[str, float]],
+    frequencies: ty.List[ty.Dict[str, Counts]],
     basis: BaseMeasurementBasis,
-) -> numpy.ndarray:
+) -> ty.List[numpy.ndarray]:
     """Compute the density matrix from the given frenquencies.
 
     This function uses the Maximum Likelyhood Estimation method. It feeds the
@@ -29,45 +27,40 @@ def frequencies_to_mle_reconstruction(
     Moreover, the MLE cost function gradient has also been modified to point
     towards the center of the Bloch sphere if a non-physical state occurs.
 
-    :param frenquencies: the estimated frequencies as a mapping
+    :param frenquencies: the estimated frequencies as a list of mappings
         {basis_change_str -> {state -> frequency}} where basis_change_str is
         the name of the quantum circuit performing the basis change, state is
         either "0" or "1" for 1-qubit and frequency is the estimated frequency.
     :param basis: the tomography basis used.
     :return: the reconstructed density matrix.
     """
-    # Build the projectors and the observed frequencies
-    simulator = BasicAer.get_backend("statevector_simulator")
-    projectors: ty.List[numpy.ndarray] = list()
-    observed_frequencies: ty.List[float] = list()
-    for basis_change_circuit in basis.basis_change_circuits():
-        inverted_basis_change_circuit = basis_change_circuit.inverse()
-        state: numpy.ndarray = (
-            execute(inverted_basis_change_circuit, simulator)
-            .result()
-            .get_statevector(inverted_basis_change_circuit.name)
-        )
-        projector = _couter(state, state)
-        projectors.append(projector)
-        projectors.append((_constants.I - projector))
-        observed_frequencies.append(frequencies[basis_change_circuit.name].get("0", 0))
-        observed_frequencies.append(frequencies[basis_change_circuit.name].get("1", 0))
 
-    def inverse_likelyhood(s: numpy.ndarray) -> float:
-        # Avoir non-physical states that confuse the optimiser
+    def inverse_likelyhood(
+        s: numpy.ndarray,
+        observed_frequencies: ty.List[float],
+        projectors: ty.List[numpy.ndarray],
+    ) -> float:
+        # Avoid non-physical states that confuse the optimiser
         if numpy.linalg.norm(s) > 1:
+            # TODO: make this a little bit smoother.
+            # Idea: project s on the sphere, do the computation, and add a penalty
+            # that scales with the distance outside of the sphere.
             return float("inf")
         accumulation = 0
-        rho = _bloch_vector_to_density_matrix(s)
+        rho = bloch_vector_to_density_matrix(s)
         for freq, proj in zip(observed_frequencies, projectors):
             accumulation += freq * numpy.log(numpy.trace(rho @ proj))
         return -numpy.real_if_close(accumulation)
 
-    def inverse_likelyhood_grad(s: numpy.ndarray) -> numpy.ndarray:
+    def inverse_likelyhood_grad(
+        s: numpy.ndarray,
+        observed_frequencies: ty.List[float],
+        projectors: ty.List[numpy.ndarray],
+    ) -> numpy.ndarray:
         # If we have a non-physical state, get back within the Bloch sphere!
         if numpy.linalg.norm(s) > 1:
             return -s
-        rho = _bloch_vector_to_density_matrix(s)
+        rho = bloch_vector_to_density_matrix(s)
         grad_density = numpy.zeros_like(rho)
         for freq, proj in zip(observed_frequencies, projectors):
             grad_density += proj.T * freq / numpy.trace(rho @ proj)
@@ -89,25 +82,41 @@ def frequencies_to_mle_reconstruction(
         "jac": lambda s: numpy.array([[-2 * s[0], -2 * s[1], -2 * s[2]]]),
     }
 
-    # Solving the system
-    result = minimize(
-        inverse_likelyhood,
-        x0=numpy.zeros(3),
-        jac=inverse_likelyhood_grad,
-        constraints=[ineq_constraint],
-        method="SLSQP",
-        options={"ftol": 1e-9},
-    )
-    return _bloch_vector_to_density_matrix(result.x)
+    density_matrices: ty.List[numpy.ndarray] = []
+    # This reconstruction could potentially be performed in parallel.
+    # Left as a TODO for the moment.
+    for freqs in frequencies:
+        # Build the projectors and the observed frequencies
+        projectors: ty.List[numpy.ndarray] = list()
+        observed_frequencies: ty.List[float] = list()
+        for basis_change_name, (state_projector, orthogonal_projector) in zip(
+            basis.basis_change_circuit_names, basis.projectors
+        ):
+            projectors.append(state_projector)
+            observed_frequencies.append(freqs[basis_change_name].get(0, 0))
+            projectors.append(orthogonal_projector)
+            observed_frequencies.append(freqs[basis_change_name].get(1, 0))
+        # Solving the system
+        result = minimize(
+            lambda s: inverse_likelyhood(s, observed_frequencies, projectors),
+            x0=numpy.zeros(3),
+            jac=lambda s: inverse_likelyhood_grad(s, observed_frequencies, projectors),
+            constraints=[ineq_constraint],
+            method="SLSQP",
+            options={"ftol": 1e-9},
+        )
+        print(result.__dict__)
+        density_matrix: numpy.ndarray = bloch_vector_to_density_matrix(result.x)
+        density_matrices.append(density_matrix)
+    return density_matrices
 
 
 def post_process_tomography_results_mle(
     result: Result,
     tomographied_circuit: QuantumCircuit,
-    qubit_index: ty.Optional[int] = None,
-    is_parallel: bool = False,
-    basis: ty.Optional[BaseMeasurementBasis] = None,
-) -> numpy.ndarray:
+    basis: BaseMeasurementBasis,
+    qubit_number: int = 1,
+) -> ty.List[numpy.ndarray]:
     """
     Compute and return the density matrix computed via state tomography.
 
@@ -117,18 +126,13 @@ def post_process_tomography_results_mle(
         the circuits returned by the one_qubit_tomography_circuits function.
     :param tomographied_circuit: the quantum circuit instance that is currently
         tomographied. Used to recover the circuit name.
-    :param qubit_index: index of the qubit used to perform the tomography
-        experiments. If is_parallel is True, this is the index of the qubit
-        that will be post-processed.
-    :param is_parallel: True if the given Result instance has been obtained
-        from a parallel execution, else False. If set to True, qubit_index
-        should be set to the index of the qubit we want the results on.
+    :param basis: the basis in which the measurements will be done.
+    :param qubit_number: the number of qubits the parallel 1-qubit tomography
+        should be performed on. Default to 1, i.e. no parallel execution.
     :return: the 2 by 2 density matrix representing the prepared quantum state.
     """
-    if basis is None:
-        basis = PauliMeasurementBasis()
     # Compute the frequencies
-    frequencies: ty.Dict[str, ty.Dict[str, float]] = compute_frequencies(
-        result, tomographied_circuit, qubit_index, is_parallel, basis
+    frequencies: ty.List[ty.Dict[str, Counts]] = compute_frequencies(
+        result, tomographied_circuit, basis, qubit_number
     )
     return frequencies_to_mle_reconstruction(frequencies, basis)

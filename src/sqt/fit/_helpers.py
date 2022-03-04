@@ -2,81 +2,87 @@ import typing as ty
 
 import numpy
 from qiskit import QuantumCircuit
-from qiskit.result import Result, marginal_counts
+from qiskit.result import Result
 
-from sqt import _constants
-from sqt.basis import BaseMeasurementBasis, PauliMeasurementBasis
+from sqt.basis.base import BaseMeasurementBasis
+from sqt.circuits import get_tomography_circuit_name, get_parallelised_circuit_name
+from sqt.counts import Counts
+
+NumericType = ty.Union[int, float, numpy.number]
+
+
+def marginalise_all_counts(counts: Counts, qubit_number: int) -> ty.List[Counts]:
+    """Marginalise over all the qubits.
+
+    Example:
+    counts = Counts({
+        0b001: 0.01,
+        0b010: 0.09,
+        0b110: 0.87,
+        0b111: 0.03,
+    })
+    qubit_number = 3
+    _marginalise_all_counts(counts, qubit_number) == [
+        Counts({0: 0.96, 1: 0.04}),
+        Counts({0: 0.01, 1: 0.99}),
+        Counts({0: 0.1, 1: 0.9})
+    ]
+
+    :param counts: the results obtained from the backend.
+    :param qubit_number: the number of qubits measured. No key in counts
+        should be strictly greater than 2**qubit_number - 1
+    :return: a list of the marginalised counts for each qubits.
+    """
+    marginalised_counts: ty.List[ty.Dict[int, float]] = [
+        {0: 0, 1: 0} for _ in range(qubit_number)
+    ]
+    for measurement, probability in counts.items():
+        for i in range(qubit_number):
+            marginalised_counts[i][(measurement >> i) & 0b1] += probability
+    return [Counts(c) for c in marginalised_counts]
 
 
 def compute_frequencies(
     result: Result,
     tomographied_circuit: QuantumCircuit,
-    qubit_index: ty.Optional[int] = None,
-    is_parallel: bool = False,
-    basis: ty.Optional[BaseMeasurementBasis] = None,
-) -> ty.Dict[str, ty.Dict[str, float]]:
+    basis: BaseMeasurementBasis,
+    qubit_number: int = 1,
+) -> ty.List[ty.Dict[str, Counts]]:
     """Compute an approximation of each expectation value with the frequency.
 
     This function takes as input the results of a given job, the circuit that
-    have been tomographied (without the basis change) and returns the observed
-    frequency for each measurement.
+    have been tomographied (without the basis change nor the parallelisation)
+    and returns the observed frequency for each measurement.
 
     :param result: the data returned by IBM chips.
     :param tomographied_circuit: the quantum circuit we are interested in.
         Should be the QuantumCircuit instance **before** appending the
         tomography basis change. In other words, the name of this
         QuantumCircuit should not include the tomography basis identifier.
-    :param qubit_index: index of the qubit the tomography process has been
-        applied on.
-    :param is_parallel: if True, several tomography experiment have been
-        performed in parallel and the results are including the raw
-        measurements. If this flag is true, a call to marginal_counts is
-        performed with the given qubit_index in order to get the right
-        measurements.
-    :param basis: the tomography basis used. Default to PauliMeasurementBasis().
-
-    :return: the estimated frequencies as a mapping
+    :param basis: the tomography basis used.
+    :param qubit_number: number of qubits the tomography process has been
+        parallelised on. Default to 1, i.e. no parallelisation.
+    :return: the estimated frequencies as a list of mappings
         {basis_change_str -> {state -> frequency}} where basis_change_str is
         the name of the quantum circuit performing the basis change, state is
-        either "0" or "1" for 1-qubit and frequency is the estimated frequency.
+        either 0 or 1 and frequency is the estimated frequency.
     """
-    if basis is None:
-        basis = PauliMeasurementBasis()
     # Compute the probabilities
-    frequencies: ty.Dict[str, ty.Dict[str, float]] = dict()
+    frequencies: ty.List[ty.Dict[str, Counts]] = [dict() for _ in range(qubit_number)]
     tc_name: str = tomographied_circuit.name
-    qubit_index_str: str = ""
-    if qubit_index is not None and not is_parallel:
-        qubit_index_str = f"_{qubit_index}"
 
-    for basis_change in map(lambda qc: qc.name, basis.basis_change_circuits()):
-        counts = result.get_counts(f"{tc_name}_{basis_change}{qubit_index_str}")
-        # If there is a need to marginalise the counts because the circuits were
-        # executed in parallel, do it now!
-        if is_parallel and qubit_index is not None:
-            counts = marginal_counts(counts, indices=[qubit_index])
-        frequencies[basis_change] = counts
+    for basis_change_name in map(lambda qc: qc.name, basis.basis_change_circuits):
+        parallelised_circuit_name: str = get_parallelised_circuit_name(
+            get_tomography_circuit_name(tc_name, basis_change_name),
+            qubit_number,
+        )
+        counts: Counts = Counts(result.get_counts(parallelised_circuit_name))
+        counts_list: ty.List[Counts] = marginalise_all_counts(counts, qubit_number)
+        for qubit_index, qubit_counts in enumerate(counts_list):
+            frequencies[qubit_index][basis_change_name] = qubit_counts
         # Change the counts in probabilities
-        count = sum(frequencies[basis_change].values())
-        for state in frequencies[basis_change]:
-            frequencies[basis_change][state] /= count
+        for qubit_index in range(qubit_number):
+            count = sum(frequencies[qubit_index][basis_change_name].values())
+            for state in frequencies[qubit_index][basis_change_name]:
+                frequencies[qubit_index][basis_change_name][state] /= count
     return frequencies
-
-
-def _couter(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray:
-    """Complex conjugate outer product."""
-    # TODO: was numpy.outer(a.T.conj(), b), might be a mistake
-    return numpy.outer(a, b.T.conj())
-
-
-def _bloch_vector_to_density_matrix(s: numpy.ndarray) -> numpy.ndarray:
-    """
-    Take a 3-dimensional Bloch vector and returns the corresponding density matrix.
-
-    :param s: A 3-dimensional real vector representing a point within the Bloch
-        sphere.
-    :return: a 2 by 2 density matrix corresponding to the given state.
-    """
-    return (
-        _constants.I + s[0] * _constants.X + s[1] * _constants.Y + s[2] * _constants.Z
-    ) / 2

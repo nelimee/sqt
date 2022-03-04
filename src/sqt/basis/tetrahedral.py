@@ -18,6 +18,7 @@ class TetrahedralMeasurementBasis(BaseMeasurementBasis):
         """Initialise the tetrahedral basis."""
         super().__init__("tetrahedral")
 
+    @property
     def basis_change_circuits(self) -> ty.List[QuantumCircuit]:
         """Return the 4 basis changes needed to perform tomography.
 
@@ -28,7 +29,12 @@ class TetrahedralMeasurementBasis(BaseMeasurementBasis):
 
         Naming convention: the returned quantum circuits are named as follow:
         - The name always starts with "bc" that stands for "basis change".
-        -
+        - Then follows a string representation of the gates used to change the
+          measurement basis. If a H gate is applied, the circuit name is "bcH".
+          If no gate is applied, the circuit name is "bcI". When several gates
+          are applied, they are order in the left-to-right order in the quantum
+          circuit notation, i.e. the first gate applied comes first in the name.
+        - "dg" stands for "dagger", i.e. the complex conjuguate.
 
         :return: all the basis change needed to perform the state tomography
             process.
@@ -42,10 +48,8 @@ class TetrahedralMeasurementBasis(BaseMeasurementBasis):
         basis_changes[0].id(0)
         theta: float = 2 * numpy.arccos(numpy.sqrt(1 / 3))
         for i in range(3):
-            # Rz is OK up to a global phase, which is not important here.
             basis_changes[i + 1].u1(-2 * numpy.pi * i / 3, 0)
             basis_changes[i + 1].ry(-theta, 0)
-
         return basis_changes
 
     @property
