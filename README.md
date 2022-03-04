@@ -32,7 +32,9 @@ Using `sqt` is quite simple and the different steps are explained below.
 3. The `equidistant` basis that perform measurements in a user-defined number of projectors that are approximately equidistant from each other. This basis has not been used yet and might be useful when redundancy is desired.
 
 ```python
-from sqt import EquidistantMeasurementBasis, PauliMeasurementBasis, TetrahedralMeasurementBasis
+from sqt.basis.equidistant import EquidistantMeasurementBasis
+from sqt.basis.pauli import PauliMeasurementBasis
+from sqt.basis.tetrahedral import TetrahedralMeasurementBasis
 
 pauli_basis = PauliMeasurementBasis()
 tetrahedral_basis = TetrahedralMeasurementBasis()
@@ -48,18 +50,39 @@ basis = tetrahedral_basis
 Once the basis has been picked, a simple call to `one_qubit_tomography_circuits` will generate all the necessary quantum circuits to perform quantum tomography.
 
 ```python
-from sqt import one_qubit_tomography_circuits
+from sqt.circuits import one_qubit_tomography_circuits
 
 circuit = None  # Replace with a QuantumCircuit instance to tomography
+                # No measurements should be appended to this circuit!
 tomography_circuits = one_qubit_tomography_circuits(
     circuit,         # The circuit to tomography
     basis,           # The basis used for tomography
-    # Should we perform the tomography in parallel on several qubits? 
-    # If is_parallel is True, qubit_number should be a positive integer.
-    is_parallel=True,
     # Number of qubits the tomography circuits should be repeated on.
     qubit_number=7,
 )
 ```
 
 Parallel execution of 1-qubit tomography circuits is natively supported by `sqt` and is provided as simple keywords 
+
+#### 3. Post process the results
+
+Now that the quantum circuits returned by `one_qubit_tomography_circuits` have been executed, they should be processed in order to recover the density matrix.
+```python
+from qiskit import execute
+
+from sqt.fit.grad import post_process_tomography_results_grad
+from sqt.fit.mle import post_process_tomography_results_mle
+
+backend = None # Fill this with the backend of your choice
+result = execute(tomography_circuits, backend).result()
+
+density_matrices = post_process_tomography_results_mle(
+    result, 
+    # Warning: this is the original circuit without basis change nor
+    #          measurements at the end. Do not change it between the
+    #          call to one_qubit_tomography_circuits and here!
+    circuit, 
+    basis,
+    qubit_number=7
+)
+```
