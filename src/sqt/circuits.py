@@ -86,9 +86,8 @@ def one_qubit_tomography_circuits(
         qc.compose(basis_change_circuit, inplace=True)
         qc.measure(0, 0)
         quantum_circuits.append(qc)
-    if qubit_number > 1:
-        quantum_circuits = _parallelise_one_qubit_tomography_circuits(
-            quantum_circuits, qubit_number
-        )
+    quantum_circuits = _parallelise_one_qubit_tomography_circuits(
+        quantum_circuits, qubit_number
+    )
 
     return quantum_circuits
