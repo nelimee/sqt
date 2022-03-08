@@ -95,6 +95,13 @@ class EquidistantMeasurementBasis(BaseMeasurementBasis):
         """
         super().__init__(f"equidistant-{approximative_point_number}")
         self._approximative_point_number: int = approximative_point_number
+        self._basis_change_circuits: ty.List[QuantumCircuit] = list()
+        for i, point in enumerate(
+            get_equidistant_points(self._approximative_point_number)
+        ):
+            self._basis_change_circuits.append(
+                point_to_circuit(point, str(i)).inverse()
+            )
 
     @property
     def basis_change_circuits(self) -> ty.List[QuantumCircuit]:
@@ -108,9 +115,8 @@ class EquidistantMeasurementBasis(BaseMeasurementBasis):
         :return: all the basis change needed to perform the state tomography
             process.
         """
-        basis_changes: ty.List[QuantumCircuit] = list()
-        for i, point in enumerate(
-            get_equidistant_points(self._approximative_point_number)
-        ):
-            basis_changes.append(point_to_circuit(point, str(i)).inverse())
-        return basis_changes
+        return self._basis_change_circuits
+
+    @property
+    def size(self) -> int:
+        return len(self._basis_change_circuits)
