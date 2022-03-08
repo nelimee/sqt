@@ -116,7 +116,10 @@ def frequencies_to_lssr_reconstruction(
         b = numpy.array(b_entries)
         # Solving the system
         rho_vec, residues, rank, s = scipy.linalg.lstsq(A, b)
-        density_matrix = rho_vec.reshape((2, 2))
+        # Warning: the solution obtained rho_vec is the vector representing
+        #          the result density matrix but it needs to be transposed in
+        #          order to be correct (do the maths and check this if you want).
+        density_matrix = rho_vec.reshape((2, 2)).T
         # Project the density matrix to the closest SDP matrix.
         sdp_density_matrix = _make_positive_semidefinite(density_matrix)
         # Issue a warning if the projection changed significantly the density matrix.
