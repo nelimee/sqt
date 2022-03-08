@@ -6,6 +6,9 @@ from qiskit.providers.aer import AerSimulator
 
 from sqt.circuits import one_qubit_tomography_circuits
 from sqt.basis.tetrahedral import TetrahedralMeasurementBasis
+from sqt.basis.pauli import PauliMeasurementBasis
+from sqt.basis.equidistant import EquidistantMeasurementBasis
+
 from sqt.fit.grad import post_process_tomography_results_grad
 from sqt.fit.mle import post_process_tomography_results_mle
 from sqt.fit.lssr import post_process_tomography_results_lssr
@@ -22,7 +25,9 @@ raw_circuit.ry(numpy.pi / 8, 0)
 raw_circuit.rz(numpy.pi / 3, 0)
 
 qubit_number = 5
-basis = TetrahedralMeasurementBasis()
+# basis = TetrahedralMeasurementBasis()
+# basis = PauliMeasurementBasis()
+basis = EquidistantMeasurementBasis(4)
 tomography_circuits = one_qubit_tomography_circuits(
     raw_circuit, basis, qubit_number=qubit_number
 )
