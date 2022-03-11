@@ -17,7 +17,7 @@ python -m pip install -e .
 ```
 The above command should be issued **in the main folder** of this repository.
 
-### Quick start
+### Command line interface
 
 The `sqt` package provides scripts that are installed along with the package.
 
@@ -95,13 +95,13 @@ Here are some examples of usage:
 >>> sqt_bloch_tomography_recover [file with .pkl extension] mle
 ```
 
-### Using the `sqt` package
+## Using the `sqt` package directly
 
 The `sqt` package can be used to implement quantum state tomography. It has been specifically designed for efficient 1-qubit tomography but might be improved in the future for efficient multi-qubit tomography. Moreover, `sqt` only supports [Qiskit](https://qiskit.org) for the moment. More frameworks might come if there is a need.
 
 Using `sqt` is quite simple and the different steps are explained below.
 
-#### 1. Pick your tomography basis
+### 1. Pick your tomography basis
 
 `sqt` implements 3 different 1-qubit tomography basis that you can choose from:
 
@@ -123,7 +123,7 @@ basis = tetrahedral_basis
 ```
 
 
-#### 2. Construct the tomography circuits
+### 2. Construct the tomography circuits
 
 Once the basis has been picked, a simple call to `one_qubit_tomography_circuits` will generate all the necessary quantum circuits to perform quantum tomography.
 
@@ -142,7 +142,7 @@ tomography_circuits = one_qubit_tomography_circuits(
 
 Parallel execution of 1-qubit tomography circuits is natively supported by `sqt` and is provided as simple keywords 
 
-#### 3. Post process the results
+### 3. Post process the results
 
 Now that the quantum circuits returned by `one_qubit_tomography_circuits` have been executed, they should be processed in order to recover the density matrix.
 ```python
