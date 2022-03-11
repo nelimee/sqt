@@ -28,15 +28,20 @@ This script makes the circuit building and submission process easier by providin
 The script inputs can be listed with the `--help` option:
 ```
 >>> sqt_bloch_tomography_submit --help
-usage: sqt_bloch_tomography_submit [-h] [--hub HUB] [--group GROUP] [--project PROJECT] [--backup-dir BACKUP_DIR] [--rep-delay REP_DELAY] backend approximate_point_number {tetrahedral,pauli}
+usage: sqt_bloch_tomography_submit [-h] [--hub HUB] [--group GROUP] [--project PROJECT]
+                                   [--backup-dir BACKUP_DIR] [--rep-delay REP_DELAY]
+                                   backend approximate_point_number {pauli,tetrahedral}
 
-Execute the circuits to perform state tomography for approximately uniformly distributed quantum states over the Bloch sphere.
+Execute the circuits to perform state tomography for approximately uniformly distributed quantum
+states over the Bloch sphere.
 
 positional arguments:
   backend               Backend to perform tomography on.
   approximate_point_number
-                        Approximate number of points used to cover the Bloch sphere. The actual number of points used might vary a little bit from this value. Each point will be tomographied independently.
-  {tetrahedral,pauli}   Name of the tomography basis used to perform quantum state tomography.
+                        Approximate number of points used to cover the Bloch sphere. The actual
+                        number of points used might vary a little bit from this value. Each point
+                        will be tomographied independently.
+  {pauli,tetrahedral}   Name of the tomography basis used to perform quantum state tomography.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -47,6 +52,7 @@ optional arguments:
                         Directory used to save the data needed to post-process job results.
   --rep-delay REP_DELAY
                         Delay between each shot. Default to the backend default value.
+
 ```
 
 Here are some examples of usage:
@@ -82,7 +88,8 @@ optional arguments:
 
 Here are some examples of usage:
 ```sh
-# Replace the "[file with .pkl extension]" with the backup file obtained with sqt_bloch_tomography_submit
+# Replace the "[file with .pkl extension]" with the backup file
+# obtained with sqt_bloch_tomography_submit
 >>> sqt_bloch_tomography_recover [file with .pkl extension] grad
 >>> sqt_bloch_tomography_recover [file with .pkl extension] lssr
 >>> sqt_bloch_tomography_recover [file with .pkl extension] mle
