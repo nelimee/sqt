@@ -1,3 +1,4 @@
+import typing as ty
 import math
 
 import numpy
@@ -65,3 +66,18 @@ class Optimize1qGateIntoRzSX(TransformationPass):
             for node in r[1:]:
                 dag.remove_op_node(node)
         return dag
+
+
+def compile_circuits(circuits: ty.List[QuantumCircuit]) -> ty.List[QuantumCircuit]:
+    """Merge 1-qubit gates with the Optimize1qGateIntoRzSX pass."""
+    from qiskit.transpiler import PassManager
+    from sqt.passes import Optimize1qGateIntoRzSX
+
+    pass_sspin = Optimize1qGateIntoRzSX()
+    pm_sspin = PassManager(passes=[pass_sspin])
+    result = pm_sspin.run(circuits)
+    if isinstance(result, QuantumCircuit):
+        # Should not be possible in theory, but makes typing checker happy
+        return [result]
+    else:
+        return result
