@@ -24,14 +24,15 @@ from sqt._maths_helpers import couter, get_orthogonal_state
 from sqt.counts import Counts
 
 
-def frobenius_inner_product(A: numpy.ndarray, B: numpy.ndarray) -> numpy.ndarray:
+def frobenius_inner_product(A: numpy.ndarray, B: numpy.ndarray) -> float:
     """Return the Frobenius inner product between the two given arrays.
 
     :param A: a 2-dimensional matrix.
     :param B: a 2-dimensional matrix.
     :return: the Frobenius inner product between A and B.
     """
-    return numpy.inner(A.T.conj().ravel(), B.ravel())
+    # return numpy.inner(A.T.conj().ravel(), B.ravel())
+    return numpy.sum(A.conj() * B)
 
 
 def negative_log_likelyhood(
@@ -168,7 +169,9 @@ def line_search(
     descent_direction: numpy.ndarray = (
         project(density_matrix - gradient) - density_matrix
     )
-    gradient_scalar_direction: float = numpy.vdot(gradient, descent_direction)
+    gradient_scalar_direction: float = frobenius_inner_product(
+        gradient, descent_direction
+    )
     # We want gamma**s to go up to very small values, let say 10^{-16}. In this case,
     # the maximum value of s that should be tested is:
     max_s: int = int(numpy.ceil(-16 / numpy.log10(gamma)))
@@ -265,13 +268,13 @@ def reconstruct_density_matrix(
         updated_density_matrix = project(updated_density_matrix)
         # Compute the difference between the previous density matrix estimate and
         # the new one. This is usefull for the stopping criterion.
-        movement_norm = (
-            numpy.linalg.norm(updated_density_matrix - density_matrix, ord="fro") / 2
+        movement_norm = numpy.linalg.norm(
+            updated_density_matrix - density_matrix, ord="fro"
         )
         density_matrix = updated_density_matrix
 
         if verbose:
-            print(f"{it+1} / {max_iter}  --->  {movement_norm}", end="\r", flush=True)
+            print(f"{it+1} / {max_iter}  --->  {movement_norm}", end="\n", flush=True)
         if movement_norm < eps:
             break
 
