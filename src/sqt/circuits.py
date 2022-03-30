@@ -57,6 +57,7 @@ def one_qubit_tomography_circuits(
     tomographied_circuit: QuantumCircuit,
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,
+    add_barrier: bool = True,
 ) -> ty.List[QuantumCircuit]:
     """Return the quantum circuits needed to perform a state tomography.
 
@@ -69,6 +70,8 @@ def one_qubit_tomography_circuits(
     :param qubit_number: the number of qubits the parallel 1-qubit tomography
         should be performed on. Default to 1, i.e. no parallel execution.
     :param basis: the basis in which the measurements will be done.
+    :param add_barrier: if True, add a barrier between the state preparation
+        and the measurement basis change.
     :return: the quantum circuits that should be executed to perform the state
         tomography in the given basis.
     """
@@ -83,6 +86,8 @@ def one_qubit_tomography_circuits(
             ),
         )
         qc.compose(tomographied_circuit, inplace=True)
+        if add_barrier:
+            qc.barrier()
         qc.compose(basis_change_circuit, inplace=True)
         qc.measure(0, 0)
         quantum_circuits.append(qc)
