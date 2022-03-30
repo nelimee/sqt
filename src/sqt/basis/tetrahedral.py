@@ -45,6 +45,9 @@ class TetrahedralMeasurementBasis(BaseMeasurementBasis):
             QuantumCircuit(1, name="bcRyRz(2/3)"),
             QuantumCircuit(1, name="bcRyRz(4/3)"),
         ]
+        # We should let this identity gate here to be sure that it will be
+        # compiled used the standard Rz sx Rz sx Rz decomposition.
+        basis_changes[0].id(0)
         theta: float = 2 * numpy.arccos(numpy.sqrt(1 / 3))
         for i in range(3):
             basis_changes[i + 1].u1(-2 * numpy.pi * i / 3, 0)

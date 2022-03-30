@@ -38,7 +38,9 @@ class PauliMeasurementBasis(BaseMeasurementBasis):
             QuantumCircuit(1, name="bcH"),
             QuantumCircuit(1, name="bcSdgH"),
         ]
-
+        # We should let this identity gate here to be sure that it will be
+        # compiled used the standard Rz sx Rz sx Rz decomposition.
+        basis_changes[0].id(0)
         basis_changes[1].h(0)
         basis_changes[2].sdg(0)
         basis_changes[2].h(0)
