@@ -72,6 +72,9 @@ def frequencies_to_mle_reconstruction(
         grad_density = numpy.zeros_like(rho)
         for freq, proj in zip(observed_frequencies, projectors):
             grad_density -= proj * freq / numpy.trace(rho @ proj)
+        # The gradient projection is non-trivial and involves the adjoint of
+        # the basis change Jacobian. The formula below has been checked and
+        # should be correct for any gradient.
         grad = numpy.real_if_close(
             numpy.array(
                 [
