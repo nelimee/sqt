@@ -56,7 +56,9 @@ def frequencies_to_mle_reconstruction(
         rho = bloch_vector_to_density_matrix(s)
         for freq, proj in zip(observed_frequencies, projectors):
             accumulation += freq * numpy.log(numpy.trace(rho @ proj))
-        return -numpy.real_if_close(accumulation) + numpy.exp(1e10 * penalty_factor)
+        return -numpy.real_if_close(accumulation) + (
+            1 - numpy.exp(1e10 * penalty_factor)
+        )
 
     def inverse_likelyhood_grad(
         s: numpy.ndarray,
@@ -78,6 +80,7 @@ def frequencies_to_mle_reconstruction(
                     numpy.trace(grad_density @ _constants.Z),
                 ]
             )
+            / 2
         )
         return grad
 
