@@ -13,9 +13,9 @@ This project has been made during the Quantum Computing Summer School 2021 at Lo
 
 In order to start using the code in this repository, first install the `sqt` package with the command
 ```sh
-python -m pip install -e .
+git clone git@github.com/nelimee/sqt
+python -m pip install -e sqt/
 ```
-The above command should be issued **in the main folder** of this repository.
 
 ### Command line interface
 
@@ -28,23 +28,23 @@ This script makes the circuit building and submission process easier by providin
 The script inputs can be listed with the `--help` option:
 ```
 >>> sqt_bloch_tomography_submit --help
-usage: sqt_bloch_tomography_submit [-h] [--hub HUB] [--group GROUP] [--project PROJECT]
-                                   [--backup-dir BACKUP_DIR] [--rep-delay REP_DELAY]
-                                   backend approximate_point_number {pauli,tetrahedral}
+usage: sqt_bloch_tomography_submit [-h] [--equidistant-points EQUIDISTANT_POINTS] [--hub HUB] [--group GROUP] [--project PROJECT] [--backup-dir BACKUP_DIR] [--rep-delay REP_DELAY] [--shots SHOTS]
+                                   [--delay-dt DELAY_DT] [--max-qubits MAX_QUBITS] [--local-backend] [--noisy-simulator]
+                                   backend approximate_point_number {pauli,tetrahedral,equidistant}
 
-Execute the circuits to perform state tomography for approximately uniformly distributed quantum
-states over the Bloch sphere.
+Execute the circuits to perform state tomography for approximately uniformly distributed quantum states over the Bloch sphere.
 
 positional arguments:
   backend               Backend to perform tomography on.
   approximate_point_number
-                        Approximate number of points used to cover the Bloch sphere. The actual
-                        number of points used might vary a little bit from this value. Each point
-                        will be tomographied independently.
-  {pauli,tetrahedral}   Name of the tomography basis used to perform quantum state tomography.
+                        Approximate number of points used to cover the Bloch sphere. The actual number of points used might vary a little bit from this value. Each point will be tomographied independently.
+  {pauli,tetrahedral,equidistant}
+                        Name of the tomography basis used to perform quantum state tomography.
 
 optional arguments:
   -h, --help            show this help message and exit
+  --equidistant-points EQUIDISTANT_POINTS
+                        If basis is 'equidistant', the number of approximately equidistant projectors that will be used. Else, this option is ignored.
   --hub HUB             Hub of your IBMQ provider. Defaults to 'ibm-q' available to all users.
   --group GROUP         Group of your IBMQ provider. Defaults to 'open' available to all users.
   --project PROJECT     Project of your IBMQ provider. Defaults to 'main' available to all users.
@@ -52,17 +52,26 @@ optional arguments:
                         Directory used to save the data needed to post-process job results.
   --rep-delay REP_DELAY
                         Delay between each shot. Default to the backend default value.
-
+  --shots SHOTS         Number of shots performed for each circuit.
+  --delay-dt DELAY_DT   Duration (in dt) of the delay to insert before state tomography.
+  --max-qubits MAX_QUBITS
+                        Maximum number of qubits that should be used.
+  --local-backend       If present, the backend used is a local one.
+  --noisy-simulator     If present, the given IBMQ backend will be used to initialise a noisy simulator. Implies '--local-backend'.
 ```
 
 Here are some examples of usage:
 ```sh
 >>> sqt_bloch_tomography_submit --hub ibm-q --group open --project main ibmq_lima 100 tetrahedral
->>> sqt_bloch_tomography_submit ibmq_lima 100 tetrahedral
->>> sqt_bloch_tomography_submit ibmq_bogota 596 pauli
+# In the following, the argument imbq_lima is ignored due to the option
+# --local-backend being given.
+>>> sqt_bloch_tomography_submit ibmq_lima 100 tetrahedral --local-backend
+# In the following, a noisy simulator initialised with ibmq_lima current calibrations will
+# be used.
+>>> sqt_bloch_tomography_submit --hub ibm-q --group open --project main ibmq_lima 100 tetrahedral --noisy-simulator
 ```
 
-You can of course use a custom provider, change the `rep_delay` value for backends that implement this feature or change the directory that will be used to store the backup file.
+You can of course use a custom provider, change the `rep_delay` value for backends that implement this feature, specify a maximum number of qubits to use (useful for the simulators and can be used to limit the number of qubits used on a given backend) or change the directory that will be used to store the backup file.
 
 The backup file is the main output of this script: it contains all the needed information for `sqt_bloch_tomography_recover`.
 
@@ -73,13 +82,15 @@ This script takes as input a backup file created with `sqt_bloch_tomography_subm
 The script inputs can be listed with the `--help` option:
 ```
 >>> sqt_bloch_tomography_recover --help
-usage: sqt_bloch_tomography_recover [-h] backup_filepath {mle,lssr,pauli,grad}
+usage: sqt_bloch_tomography_recover [-h]
+                                    backup_filepath {mle,pauli,lssr,grad}
+                                    [{mle,pauli,lssr,grad} ...]
 
 Post-process the job result and compute the reconstructed density matrices.
 
 positional arguments:
   backup_filepath       Backup file path that has been saved during the job submission.
-  {mle,lssr,pauli,grad}
+  {mle,pauli,lssr,grad}
                         Post-processing method used to reconstruct the density matrices.
 
 optional arguments:
@@ -91,8 +102,7 @@ Here are some examples of usage:
 # Replace the "[file with .pkl extension]" with the backup file
 # obtained with sqt_bloch_tomography_submit
 >>> sqt_bloch_tomography_recover [file with .pkl extension] grad
->>> sqt_bloch_tomography_recover [file with .pkl extension] lssr
->>> sqt_bloch_tomography_recover [file with .pkl extension] mle
+>>> sqt_bloch_tomography_recover [file with .pkl extension] lssr grad mle
 ```
 
 ## Using the `sqt` package directly
