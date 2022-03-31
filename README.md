@@ -7,6 +7,8 @@ This project has been made during the Quantum Computing Summer School 2021 at Lo
 - Andrey Lokhov
 - Jon Nelson
 
+and continued during my PhD.
+
 ## Quick start
 
 ### Install
