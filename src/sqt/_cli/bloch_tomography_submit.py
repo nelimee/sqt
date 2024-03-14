@@ -43,8 +43,9 @@ def get_backup_filename(
     now = datetime.now()
     now_str: str = now.isoformat()
     jobid: str = job.job_id()
+    backend_name: str = backend.name.strip("' ").replace("(", "-").replace(")", "-")
     filename: str = (
-        f"backend-{backend.name}_basis-{basis.name}_points-{len(raw_circuits)}"
+        f"backend-{backend_name}_basis-{basis.name}_points-{len(raw_circuits)}"
         f"_delay-{delay_dt}_shots-{shots}_{now_str}_jobid-{jobid}.pkl"
     )
     path: Path = backup_dir / filename
