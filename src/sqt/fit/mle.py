@@ -1,5 +1,3 @@
-import typing as ty
-
 import numpy
 from qiskit import QuantumCircuit
 from qiskit.result import Result
@@ -13,9 +11,9 @@ from sqt.fit._helpers import compute_frequencies
 
 
 def frequencies_to_mle_reconstruction(
-    frequencies: ty.List[ty.Dict[str, Counts]],
+    frequencies: list[dict[str, Counts]],
     basis: BaseMeasurementBasis,
-) -> ty.List[numpy.ndarray]:
+) -> list[numpy.ndarray]:
     """Compute the density matrix from the given frenquencies.
 
     This function uses the Maximum Likelyhood Estimation method. It feeds the
@@ -37,8 +35,8 @@ def frequencies_to_mle_reconstruction(
 
     def inverse_likelyhood(
         s: numpy.ndarray,
-        observed_frequencies: ty.List[float],
-        projectors: ty.List[numpy.ndarray],
+        observed_frequencies: list[float],
+        projectors: list[numpy.ndarray],
     ) -> float:
         # Avoid non-physical states that confuse the optimiser
         penalty_factor: float = 0.0
@@ -62,8 +60,8 @@ def frequencies_to_mle_reconstruction(
 
     def inverse_likelyhood_grad(
         s: numpy.ndarray,
-        observed_frequencies: ty.List[float],
-        projectors: ty.List[numpy.ndarray],
+        observed_frequencies: list[float],
+        projectors: list[numpy.ndarray],
     ) -> numpy.ndarray:
         # If we have a non-physical state, get back within the Bloch sphere!
         if numpy.linalg.norm(s) > 1:
@@ -93,13 +91,13 @@ def frequencies_to_mle_reconstruction(
         "jac": lambda s: numpy.array([[-2 * s[0], -2 * s[1], -2 * s[2]]]),
     }
 
-    density_matrices: ty.List[numpy.ndarray] = []
+    density_matrices: list[numpy.ndarray] = []
     # This reconstruction could potentially be performed in parallel.
     # Left as a TODO for the moment.
     for freqs in frequencies:
         # Build the projectors and the observed frequencies
-        projectors: ty.List[numpy.ndarray] = list()
-        observed_frequencies: ty.List[float] = list()
+        projectors: list[numpy.ndarray] = list()
+        observed_frequencies: list[float] = list()
         for basis_change_name, (state_projector, orthogonal_projector) in zip(
             basis.basis_change_circuit_names, basis.projectors
         ):
@@ -126,7 +124,7 @@ def post_process_tomography_results_mle(
     tomographied_circuit: QuantumCircuit,
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,
-) -> ty.List[numpy.ndarray]:
+) -> list[numpy.ndarray]:
     """
     Compute and return the density matrix computed via state tomography.
 
@@ -142,7 +140,7 @@ def post_process_tomography_results_mle(
     :return: the 2 by 2 density matrix representing the prepared quantum state.
     """
     # Compute the frequencies
-    frequencies: ty.List[ty.Dict[str, Counts]] = compute_frequencies(
+    frequencies: list[dict[str, Counts]] = compute_frequencies(
         result, tomographied_circuit, basis, qubit_number
     )
     return frequencies_to_mle_reconstruction(frequencies, basis)

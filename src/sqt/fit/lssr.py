@@ -1,5 +1,3 @@
-import typing as ty
-
 import numpy
 import scipy.linalg
 from qiskit import QuantumCircuit
@@ -11,7 +9,7 @@ from sqt.fit._helpers import compute_frequencies
 
 
 def _make_positive_semidefinite(
-    mat: numpy.ndarray, epsilon: ty.Optional[float] = 0
+    mat: numpy.ndarray, epsilon: float = 0
 ) -> numpy.ndarray:
     """
     Rescale a Hermitian matrix to nearest postive semidefinite matrix.
@@ -60,11 +58,11 @@ def _make_positive_semidefinite(
 
 
 def frequencies_to_lssr_reconstruction(
-    frequencies: ty.List[ty.Dict[str, Counts]],
+    frequencies: list[dict[str, Counts]],
     basis: BaseMeasurementBasis,
     epsilon: float = 1e-3,
     verbose: bool = False,
-) -> ty.List[numpy.ndarray]:
+) -> list[numpy.ndarray]:
     """Compute the density matrix from the given frenquencies.
 
     This function constructs an observable matrix A that contains all the
@@ -98,13 +96,13 @@ def frequencies_to_lssr_reconstruction(
     :param verbose: if True, print warnings and information about the optimisation.
     :return: the reconstructed density matrix.
     """
-    density_matrices: ty.List[numpy.ndarray] = []
+    density_matrices: list[numpy.ndarray] = []
     # This reconstruction could potentially be performed in parallel.
     # Left as a TODO for the moment.
     for freqs in frequencies:
         # Build the projectors and the observed frequencies
-        A_rows: ty.List[numpy.ndarray] = list()
-        b_entries: ty.List[float] = list()
+        A_rows: list[numpy.ndarray] = list()
+        b_entries: list[float] = list()
         for basis_change_name, (state_projector, orthogonal_projector) in zip(
             basis.basis_change_circuit_names, basis.projectors
         ):
@@ -139,7 +137,7 @@ def post_process_tomography_results_lssr(
     tomographied_circuit: QuantumCircuit,
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,
-) -> ty.List[numpy.ndarray]:
+) -> list[numpy.ndarray]:
     """
     Compute and return the density matrix computed via state tomography.
 
@@ -171,7 +169,7 @@ def post_process_tomography_results_lssr(
     :return: the 2 by 2 density matrix representing the prepared quantum state.
     """
     # Compute the frequencies
-    frequencies: ty.List[ty.Dict[str, Counts]] = compute_frequencies(
+    frequencies: list[dict[str, Counts]] = compute_frequencies(
         result, tomographied_circuit, basis, qubit_number
     )
 

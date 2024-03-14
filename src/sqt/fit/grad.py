@@ -13,8 +13,6 @@ https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf
 might solve the issue, in which case the convergence speed will likely be much better.
 """
 
-import typing as ty
-
 import numpy
 from qiskit import QuantumCircuit
 from qiskit.result import Result
@@ -39,7 +37,7 @@ def frobenius_inner_product(A: numpy.ndarray, B: numpy.ndarray) -> float:
 
 def negative_log_likelyhood(
     density_matrix: numpy.ndarray,
-    projector_matrices: ty.List[numpy.ndarray],
+    projector_matrices: list[numpy.ndarray],
     observed_frequencies: numpy.ndarray,
 ) -> float:
     """Compute the negative log likelyhood value for the given parameters.
@@ -62,8 +60,8 @@ def negative_log_likelyhood(
 
 def negative_log_likelyhood_gradient(
     density_matrix: numpy.ndarray,
-    projector_vectors: ty.List[numpy.ndarray],
-    projector_matrices: ty.List[numpy.ndarray],
+    projector_vectors: list[numpy.ndarray],
+    projector_matrices: list[numpy.ndarray],
     observed_frequencies: numpy.ndarray,
 ):
     """Compute the negative log likelyhood gradient for the given parameters.
@@ -121,7 +119,7 @@ def project(matrix: numpy.ndarray) -> numpy.ndarray:
 
 def line_search(
     density_matrix: numpy.ndarray,
-    projector_matrices: ty.List[numpy.ndarray],
+    projector_matrices: list[numpy.ndarray],
     observed_frequencies: numpy.ndarray,
     gradient: numpy.ndarray,
     previous_gradient_step: float,
@@ -192,8 +190,8 @@ def line_search(
 
 
 def reconstruct_density_matrix(
-    empirical_frequencies: ty.Union[numpy.ndarray, ty.List[float]],
-    projector_vectors: ty.List[numpy.ndarray],
+    empirical_frequencies: numpy.ndarray | list[float],
+    projector_vectors: list[numpy.ndarray],
     max_iter: int = 10000,
     eps: float = 1e-9,
     alpha: float = 1e-4,
@@ -294,9 +292,9 @@ def reconstruct_density_matrix(
 
 
 def frequencies_to_grad_reconstruction(
-    frequencies: ty.List[ty.Dict[str, Counts]],
+    frequencies: list[dict[str, Counts]],
     basis: BaseMeasurementBasis,
-) -> ty.List[numpy.ndarray]:
+) -> list[numpy.ndarray]:
     """Compute the density matrix from the given frenquencies.
 
     This function uses the Maximum Likelyhood Estimation method and a
@@ -311,13 +309,13 @@ def frequencies_to_grad_reconstruction(
     :param basis: the tomography basis used.
     :return: the reconstructed density matrix.
     """
-    density_matrices: ty.List[numpy.ndarray] = []
+    density_matrices: list[numpy.ndarray] = []
     # This reconstruction could potentially be performed in parallel.
     # Left as a TODO for the moment.
     for freqs in frequencies:
         # Build the projectors and the observed frequencies
-        projectors: ty.List[numpy.ndarray] = list()
-        observed_frequencies: ty.List[float] = list()
+        projectors: list[numpy.ndarray] = list()
+        observed_frequencies: list[float] = list()
         for basis_change_name, state_projector in zip(
             basis.basis_change_circuit_names, basis.projector_states
         ):
@@ -337,7 +335,7 @@ def post_process_tomography_results_grad(
     tomographied_circuit: QuantumCircuit,
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,
-) -> ty.List[numpy.ndarray]:
+) -> list[numpy.ndarray]:
     """
     Compute and return the density matrix computed via state tomography.
 
@@ -354,7 +352,7 @@ def post_process_tomography_results_grad(
     :return: the 2 by 2 density matrix representing the prepared quantum state.
     """
     # Compute the frequencies
-    frequencies: ty.List[ty.Dict[str, Counts]] = compute_frequencies(
+    frequencies: list[dict[str, Counts]] = compute_frequencies(
         result, tomographied_circuit, basis, qubit_number
     )
     return frequencies_to_grad_reconstruction(frequencies, basis)

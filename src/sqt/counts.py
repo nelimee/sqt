@@ -2,7 +2,7 @@ import typing as ty
 from collections import UserDict
 
 
-def to_int(key: ty.Union[str, int]) -> int:
+def to_int(key: str | int) -> int:
     if isinstance(key, int):
         return key
     if not isinstance(key, str):
@@ -13,7 +13,7 @@ def to_int(key: ty.Union[str, int]) -> int:
 
 
 class Counts(UserDict[int, float]):
-    def __init__(self, counts: ty.Mapping[ty.Union[int, str], ty.Union[int, float]]):
+    def __init__(self, counts: ty.Mapping[int | str, int | float]):
         total = sum(counts.values())
         if total < 1e-10:
             print(counts)

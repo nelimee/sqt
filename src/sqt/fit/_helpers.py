@@ -1,5 +1,3 @@
-import typing as ty
-
 import numpy
 from qiskit import QuantumCircuit
 from qiskit.result import Result
@@ -8,10 +6,10 @@ from sqt.basis.base import BaseMeasurementBasis
 from sqt.circuits import get_parallelised_circuit_name, get_tomography_circuit_name
 from sqt.counts import Counts
 
-NumericType = ty.Union[int, float, numpy.number]
+NumericType = int | float | numpy.number
 
 
-def marginalise_all_counts(counts: Counts, qubit_number: int) -> ty.List[Counts]:
+def marginalise_all_counts(counts: Counts, qubit_number: int) -> list[Counts]:
     """Marginalise over all the qubits.
 
     Example:
@@ -47,7 +45,7 @@ def compute_frequencies(
     tomographied_circuit: QuantumCircuit,
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,
-) -> ty.List[ty.Dict[str, Counts]]:
+) -> list[dict[str, Counts]]:
     """Compute an approximation of each expectation value with the frequency.
 
     This function takes as input the results of a given job, the circuit that
@@ -68,7 +66,7 @@ def compute_frequencies(
         either 0 or 1 and frequency is the estimated frequency.
     """
     # Compute the probabilities
-    frequencies: ty.List[ty.Dict[str, Counts]] = [dict() for _ in range(qubit_number)]
+    frequencies: list[dict[str, Counts]] = [dict() for _ in range(qubit_number)]
     tc_name: str = tomographied_circuit.name
 
     for basis_change_name in basis.basis_change_circuit_names:
@@ -77,7 +75,7 @@ def compute_frequencies(
             qubit_number,
         )
         counts: Counts = Counts(result.get_counts(parallelised_circuit_name))  # type: ignore
-        counts_list: ty.List[Counts] = marginalise_all_counts(counts, qubit_number)
+        counts_list: list[Counts] = marginalise_all_counts(counts, qubit_number)
         for qubit_index, qubit_counts in enumerate(counts_list):
             frequencies[qubit_index][basis_change_name] = qubit_counts
         # Change the counts in probabilities

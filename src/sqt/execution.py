@@ -1,5 +1,3 @@
-import typing as ty
-
 from qiskit import QuantumCircuit
 from qiskit.providers.backend import BackendV2 as Backend
 from qiskit_ibm_runtime import RuntimeJobV2 as RuntimeJob
@@ -36,9 +34,9 @@ def submit(
 
 
 def execute(
-    circuits: ty.List[QuantumCircuit],
+    circuits: list[QuantumCircuit],
     backend: Backend,
-    tags: ty.Optional[ty.List[str]] = None,
+    tags: list[str] | None = None,
     **kwargs,
 ):
     """Execute the given circuits on the backend and returns the result.

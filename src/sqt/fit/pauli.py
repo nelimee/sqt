@@ -1,19 +1,17 @@
-import typing as ty
-
 import numpy
 from qiskit import QuantumCircuit
 from qiskit.result import Result
 
 from sqt import _constants
 from sqt.basis.base import BaseMeasurementBasis
-from sqt.fit._helpers import compute_frequencies
 from sqt.counts import Counts
+from sqt.fit._helpers import compute_frequencies
 
 
 def frequencies_to_pauli_reconstruction(
-    frequencies: ty.List[ty.Dict[str, Counts]],
+    frequencies: list[dict[str, Counts]],
     basis: BaseMeasurementBasis,
-) -> ty.List[numpy.ndarray]:
+) -> list[numpy.ndarray]:
     """Compute the density matrix from the given frenquencies.
 
     This function use the fact that any density matrix can be decomposed as
@@ -31,7 +29,7 @@ def frequencies_to_pauli_reconstruction(
         basis.name == "pauli"
     ), "Pauli reconstruction method is only implemented for Pauli measurements."
 
-    density_matrices: ty.List[numpy.ndarray] = []
+    density_matrices: list[numpy.ndarray] = []
     for freqs in frequencies:
         density_matrix: numpy.ndarray = (
             _constants.I
@@ -48,7 +46,7 @@ def post_process_tomography_results_pauli(
     tomographied_circuit: QuantumCircuit,
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,
-) -> ty.List[numpy.ndarray]:
+) -> list[numpy.ndarray]:
     """
     Compute and return the density matrix computed via state tomography.
 
@@ -61,7 +59,7 @@ def post_process_tomography_results_pauli(
         should be performed on. Default to 1, i.e. no parallel execution.
     :return: the 2 by 2 density matrix representing the prepared quantum state.
     """
-    frequencies: ty.List[ty.Dict[str, Counts]] = compute_frequencies(
+    frequencies: list[dict[str, Counts]] = compute_frequencies(
         result, tomographied_circuit, basis, qubit_number
     )
 

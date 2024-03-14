@@ -23,12 +23,12 @@ _POST_PROCESSING = {
 
 def unpack_data(
     backup_filename: Path,
-) -> ty.Tuple[
+) -> tuple[
     str,
-    ty.List[QuantumCircuit],
+    list[QuantumCircuit],
     BaseMeasurementBasis,
     str,
-    ty.Dict[str, str],
+    dict[str, str],
     int,
     Result,
     int,
@@ -99,16 +99,16 @@ def main():
     for post_processing_method_name in args.post_processing_method:
         print(f"Starting post-processing with '{post_processing_method_name}' method!")
         post_processing_method: ty.Callable[
-            [Result, QuantumCircuit, BaseMeasurementBasis, int], ty.List[numpy.ndarray]
+            [Result, QuantumCircuit, BaseMeasurementBasis, int], list[numpy.ndarray]
         ] = _POST_PROCESSING[post_processing_method_name]
         # data[qubit_index][i] = (point, density_matrix)
-        data: ty.List[ty.List[ty.Tuple[numpy.ndarray, numpy.ndarray]]] = [
+        data: list[list[tuple[numpy.ndarray, numpy.ndarray]]] = [
             list() for _ in range(qubit_number)
         ]
         # Might be parallelised.
         for circuit in raw_circuits:
             point: numpy.ndarray = numpy.array(eval(circuit.name))  # Quite bad...
-            density_matrices: ty.List[numpy.ndarray] = post_processing_method(
+            density_matrices: list[numpy.ndarray] = post_processing_method(
                 results, circuit, basis, qubit_number
             )
             for i in range(qubit_number):

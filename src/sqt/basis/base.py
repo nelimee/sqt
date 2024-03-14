@@ -16,8 +16,8 @@ class BaseMeasurementBasis(abc.ABC):
     def __init__(self, name: str):
         """Initialise the basis with the given name."""
         self._name: str = name
-        self._projector_states: ty.List[numpy.ndarray] = list()
-        self._projectors: ty.List[ty.Tuple[numpy.ndarray, numpy.ndarray]] = list()
+        self._projector_states: list[numpy.ndarray] = list()
+        self._projectors: list[tuple[numpy.ndarray, numpy.ndarray]] = list()
 
     @property
     @abc.abstractmethod
@@ -44,7 +44,7 @@ class BaseMeasurementBasis(abc.ABC):
         pass
 
     @property
-    def projector_states(self) -> ty.Iterable[numpy.ndarray]:
+    def projector_states(self) -> ty.Iterator[numpy.ndarray]:
         """Return the states that represent the measurement basis.
 
         This method returns the states |phi_i> such that the POVM
@@ -71,7 +71,7 @@ class BaseMeasurementBasis(abc.ABC):
         yield from self._projector_states
 
     @property
-    def projectors(self) -> ty.Iterable[ty.Tuple[numpy.ndarray, numpy.ndarray]]:
+    def projectors(self) -> ty.Iterator[tuple[numpy.ndarray, numpy.ndarray]]:
         """Return the POVM projectors used for this basis.
 
         Each tuple corresponds to one projection basis, with the first entry of

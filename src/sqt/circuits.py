@@ -1,5 +1,3 @@
-import typing as ty
-
 from qiskit import QuantumCircuit
 
 from sqt.basis.base import BaseMeasurementBasis
@@ -23,9 +21,9 @@ def get_parallelised_circuit_name(base_name: str, qubit_number: int) -> str:
 
 
 def _parallelise_one_qubit_tomography_circuits(
-    one_qubit_quantum_circuits: ty.List[QuantumCircuit],
+    one_qubit_quantum_circuits: list[QuantumCircuit],
     qubit_number: int,
-) -> ty.List[QuantumCircuit]:
+) -> list[QuantumCircuit]:
     """Return the quantum circuits needed to perform a state tomography.
 
     This function duplicates the circuits given in one_qubit_quantum_circuits
@@ -38,7 +36,7 @@ def _parallelise_one_qubit_tomography_circuits(
     :return: the quantum circuits that should be executed to perform the state
         tomography.
     """
-    quantum_circuits: ty.List[QuantumCircuit] = list()
+    quantum_circuits: list[QuantumCircuit] = list()
     for circuit in one_qubit_quantum_circuits:
         qc = QuantumCircuit(
             qubit_number,
@@ -58,7 +56,7 @@ def one_qubit_tomography_circuits(
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,
     add_barrier: bool = True,
-) -> ty.List[QuantumCircuit]:
+) -> list[QuantumCircuit]:
     """Return the quantum circuits needed to perform a state tomography.
 
     This function appends each of the basis change given by the basis to the
@@ -75,7 +73,7 @@ def one_qubit_tomography_circuits(
     :return: the quantum circuits that should be executed to perform the state
         tomography in the given basis.
     """
-    quantum_circuits: ty.List[QuantumCircuit] = list()
+    quantum_circuits: list[QuantumCircuit] = list()
 
     for basis_change_circuit in basis.basis_change_circuits:
         qc = QuantumCircuit(

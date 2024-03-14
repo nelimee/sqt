@@ -1,5 +1,3 @@
-import typing as ty
-
 import numpy
 from qiskit import QuantumCircuit
 
@@ -19,7 +17,7 @@ class TetrahedralMeasurementBasis(BaseMeasurementBasis):
         super().__init__("tetrahedral")
 
     @property
-    def basis_change_circuits(self) -> ty.List[QuantumCircuit]:
+    def basis_change_circuits(self) -> list[QuantumCircuit]:
         """Return the 4 basis changes needed to perform tomography.
 
         Quantum state tomography is performed by measuring the quantum state
@@ -39,7 +37,7 @@ class TetrahedralMeasurementBasis(BaseMeasurementBasis):
         :return: all the basis change needed to perform the state tomography
             process.
         """
-        basis_changes: ty.List[QuantumCircuit] = [
+        basis_changes: list[QuantumCircuit] = [
             QuantumCircuit(1, name="bcI"),
             QuantumCircuit(1, name="bcRyRz(0)"),
             QuantumCircuit(1, name="bcRyRz(2/3)"),

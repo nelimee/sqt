@@ -1,7 +1,6 @@
 import argparse
 import itertools as it
 import pickle
-import typing as ty
 from datetime import datetime
 from pathlib import Path
 
@@ -33,7 +32,7 @@ _DEFAULT_SAVE = Path.cwd()
 
 def get_backup_filename(
     backup_dir: Path,
-    raw_circuits: ty.List[QuantumCircuit],
+    raw_circuits: list[QuantumCircuit],
     backend,
     basis: BaseMeasurementBasis,
     job: RuntimeJob,
@@ -62,7 +61,7 @@ def get_backup_filename(
 
 def backup(
     backup_dir: Path,
-    raw_circuits: ty.List[QuantumCircuit],
+    raw_circuits: list[QuantumCircuit],
     backend,
     basis: BaseMeasurementBasis,
     hub: str,
@@ -96,7 +95,7 @@ def backup(
         )
 
 
-def get_basis(name: str, equidistant_points: ty.Optional[int]) -> BaseMeasurementBasis:
+def get_basis(name: str, equidistant_points: int | None) -> BaseMeasurementBasis:
     if name == "equidistant":
         if equidistant_points is None:
             raise RuntimeError(
@@ -120,7 +119,7 @@ def _get_ibmq_backend(
         raise RuntimeError(
             f"Could not load account with '{hub}' '{group}' '{project}'."
         )
-    potential_backends: ty.List = service.backends(name=backend_name)
+    potential_backends: list = service.backends(name=backend_name)
     if len(potential_backends) == 0:
         print(f"[bold red]No backend found with name '{backend_name}'.[/bold red]")
         print("[bold orange]Check that:[/bold orange]")
@@ -166,14 +165,14 @@ def wait_for_job(job: RuntimeJob) -> None:
 
 
 def submit_circuits(
-    circuits: ty.List[QuantumCircuit],
+    circuits: list[QuantumCircuit],
     backend: Backend | AerSimulator,
-    rep_delay: ty.Optional[float],
+    rep_delay: float | None,
     shots: int,
     delay_dt: int,
 ) -> RuntimeJob:
     print(f"Compiling the {len(circuits)} circuits that will be submitted.")
-    compiled_circuits: ty.List[QuantumCircuit] = compile_circuits(circuits)
+    compiled_circuits: list[QuantumCircuit] = compile_circuits(circuits)
     print(f"Submitting {len(compiled_circuits)} circuits.")
     tags = ["tomography", "bloch", f"shots={shots}", f"delay={delay_dt}"]
     if rep_delay is not None:
@@ -292,7 +291,7 @@ def main():
     )
     print(f"Using basis '{basis.name}'.")
 
-    circuits: ty.List[QuantumCircuit] = get_approximately_equidistant_circuits(
+    circuits: list[QuantumCircuit] = get_approximately_equidistant_circuits(
         args.approximate_point_number
     )
     if args.delay_dt > 0:
@@ -302,7 +301,7 @@ def main():
             )
         for circuit in circuits:
             circuit.delay(args.delay_dt, 0, unit="dt")
-    tomography_circuits: ty.List[QuantumCircuit] = list(
+    tomography_circuits: list[QuantumCircuit] = list(
         it.chain(
             *[
                 one_qubit_tomography_circuits(c, basis=basis, qubit_number=qubit_number)

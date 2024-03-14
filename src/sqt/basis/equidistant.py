@@ -1,12 +1,10 @@
-import typing as ty
-
 import numpy
 from qiskit import QuantumCircuit
 
 from sqt.basis.base import BaseMeasurementBasis
 
 
-def get_equidistant_points(N: int) -> ty.List[numpy.ndarray]:
+def get_equidistant_points(N: int) -> list[numpy.ndarray]:
     """Generate approximately n points evenly distributed accros the 3-d sphere.
 
     This function tries to find approximately n points (might be a little less
@@ -18,9 +16,9 @@ def get_equidistant_points(N: int) -> ty.List[numpy.ndarray]:
     # Unit sphere
     r = 1
 
-    points: ty.List[numpy.ndarray] = list()
+    points: list[numpy.ndarray] = list()
 
-    a = 4 * numpy.pi * r ** 2 / N
+    a = 4 * numpy.pi * r**2 / N
     d = numpy.sqrt(a)
     m_v = int(numpy.round(numpy.pi / d))
     d_v = numpy.pi / m_v
@@ -45,8 +43,8 @@ def get_equidistant_points(N: int) -> ty.List[numpy.ndarray]:
 
 
 def points_to_xyz(
-    points: ty.List[numpy.ndarray],
-) -> ty.Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]:
+    points: list[numpy.ndarray],
+) -> tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]:
     """Transform a list of 3-dimensional points into 3 lists of coordinates.
 
     :param points: a list of 3-dimensional points like
@@ -75,7 +73,7 @@ def point_to_circuit(point: numpy.ndarray, name: str) -> QuantumCircuit:
 
 def get_approximately_equidistant_circuits(
     approximate_point_number: int,
-) -> ty.List[QuantumCircuit]:
+) -> list[QuantumCircuit]:
     """Construct and returns circuits that are approximately equidistant.
 
     This function will construct approximately approximate_point_number
@@ -120,7 +118,7 @@ class EquidistantMeasurementBasis(BaseMeasurementBasis):
         """
         super().__init__(f"equidistant-{approximative_point_number}")
         self._approximative_point_number: int = approximative_point_number
-        self._basis_change_circuits: ty.List[QuantumCircuit] = list()
+        self._basis_change_circuits: list[QuantumCircuit] = list()
         for i, point in enumerate(
             get_equidistant_points(self._approximative_point_number)
         ):
@@ -129,7 +127,7 @@ class EquidistantMeasurementBasis(BaseMeasurementBasis):
             )
 
     @property
-    def basis_change_circuits(self) -> ty.List[QuantumCircuit]:
+    def basis_change_circuits(self) -> list[QuantumCircuit]:
         """Return approximately n basis changes that are approximately equidistant.
 
         This function tries to find approximately n points (might be a little

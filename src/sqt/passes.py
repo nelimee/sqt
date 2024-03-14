@@ -1,5 +1,4 @@
 import math
-import typing as ty
 
 import numpy
 import scipy.linalg
@@ -68,7 +67,7 @@ class Optimize1qGateIntoRzSX(TransformationPass):
         return dag
 
 
-def compile_circuits(circuits: ty.List[QuantumCircuit]) -> ty.List[QuantumCircuit]:
+def compile_circuits(circuits: list[QuantumCircuit]) -> list[QuantumCircuit]:
     """Merge 1-qubit gates with the Optimize1qGateIntoRzSX pass."""
     from qiskit.transpiler import PassManager
 

@@ -1,5 +1,3 @@
-import typing as ty
-
 from qiskit import QuantumCircuit
 
 from sqt.basis.base import BaseMeasurementBasis
@@ -13,7 +11,7 @@ class PauliMeasurementBasis(BaseMeasurementBasis):
         super().__init__("pauli")
 
     @property
-    def basis_change_circuits(self) -> ty.List[QuantumCircuit]:
+    def basis_change_circuits(self) -> list[QuantumCircuit]:
         """Return the 3 basis change needed to perform tomography.
 
         Quantum state tomography is performed by measuring the quantum state
@@ -33,7 +31,7 @@ class PauliMeasurementBasis(BaseMeasurementBasis):
         :return: all the basis change needed to perform the state tomography
             process.
         """
-        basis_changes: ty.List[QuantumCircuit] = [
+        basis_changes: list[QuantumCircuit] = [
             QuantumCircuit(1, name="bcI"),
             QuantumCircuit(1, name="bcH"),
             QuantumCircuit(1, name="bcSdgH"),
