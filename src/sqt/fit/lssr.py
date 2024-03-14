@@ -6,8 +6,8 @@ from qiskit import QuantumCircuit
 from qiskit.result import Result
 
 from sqt.basis.base import BaseMeasurementBasis
-from sqt.fit._helpers import compute_frequencies
 from sqt.counts import Counts
+from sqt.fit._helpers import compute_frequencies
 
 
 def _make_positive_semidefinite(
@@ -115,7 +115,7 @@ def frequencies_to_lssr_reconstruction(
         A = numpy.array(A_rows)
         b = numpy.array(b_entries)
         # Solving the system
-        rho_vec, residues, rank, s = scipy.linalg.lstsq(A, b)
+        rho_vec, *_ = scipy.linalg.lstsq(A, b)  # type: ignore
         # Warning: the solution obtained rho_vec is the vector representing
         #          the result density matrix but it needs to be transposed in
         #          order to be correct (do the maths and check this if you want).

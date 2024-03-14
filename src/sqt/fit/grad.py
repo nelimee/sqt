@@ -8,20 +8,21 @@ and has been inspired by the code
 https://github.com/lanl/quantum_algorithms/blob/master/subroutines/quantum_tomography/qtml.jl
 
 The gradient descent currently does not implement line-search due to issues described
-in the line_search function. Using the algorithm described in 
+in the line_search function. Using the algorithm described in
 https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf
 might solve the issue, in which case the convergence speed will likely be much better.
 """
+
 import typing as ty
 
 import numpy
 from qiskit import QuantumCircuit
 from qiskit.result import Result
 
-from sqt.basis.base import BaseMeasurementBasis
-from sqt.fit._helpers import compute_frequencies
 from sqt._maths_helpers import couter, get_orthogonal_state
+from sqt.basis.base import BaseMeasurementBasis
 from sqt.counts import Counts
+from sqt.fit._helpers import compute_frequencies
 
 
 def frobenius_inner_product(A: numpy.ndarray, B: numpy.ndarray) -> float:
@@ -31,8 +32,9 @@ def frobenius_inner_product(A: numpy.ndarray, B: numpy.ndarray) -> float:
     :param B: a 2-dimensional matrix.
     :return: the Frobenius inner product between A and B.
     """
-    # return numpy.inner(A.T.conj().ravel(), B.ravel())
-    return numpy.sum(A.conj() * B)
+    # TODO: check validity of that.
+    return numpy.inner(A.T.conj().ravel(), B.ravel())
+    # return numpy.sum(A.conj() * B)
 
 
 def negative_log_likelyhood(
@@ -176,15 +178,15 @@ def line_search(
     # the maximum value of s that should be tested is:
     max_s: int = int(numpy.ceil(-16 / numpy.log10(gamma)))
     for s in range(max_s):
-        tentative_point: numpy.ndarray = density_matrix + gamma ** s * descent_direction
+        tentative_point: numpy.ndarray = density_matrix + gamma**s * descent_direction
         tentative_negative_log_likelyhood = negative_log_likelyhood(
             tentative_point, projector_matrices, observed_frequencies
         )
         if (
             tentative_negative_log_likelyhood - current_negative_log_likelyhood
-            <= c * gamma ** s * gradient_scalar_direction
+            <= c * gamma**s * gradient_scalar_direction
         ):
-            return gamma ** s
+            return gamma**s
     # If the line search failed, return an arbitrary step and hope for the best
     return 1e-5
 
@@ -268,8 +270,8 @@ def reconstruct_density_matrix(
         updated_density_matrix = project(updated_density_matrix)
         # Compute the difference between the previous density matrix estimate and
         # the new one. This is usefull for the stopping criterion.
-        movement_norm = numpy.linalg.norm(
-            updated_density_matrix - density_matrix, ord="fro"
+        movement_norm = float(
+            numpy.linalg.norm(updated_density_matrix - density_matrix, ord="fro")
         )
         density_matrix = updated_density_matrix
 

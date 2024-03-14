@@ -1,6 +1,6 @@
 import numpy
 from qiskit import QuantumCircuit
-from qiskit.providers.aer import AerSimulator
+from qiskit_aer import AerSimulator
 
 
 def get_one_qubit_exact_density_matrix(
@@ -15,7 +15,8 @@ def get_one_qubit_exact_density_matrix(
     """
     simulator = AerSimulator(method="density_matrix")
     circuit_copy: QuantumCircuit = circuit.copy()
-    circuit_copy.save_density_matrix()
+    # Defined by qiskit-aer when importing qiskit_aer.
+    circuit_copy.save_density_matrix()  # type: ignore
 
     density_matrix_result = simulator.run(circuit_copy).result()
     return density_matrix_result.results[0].data.density_matrix

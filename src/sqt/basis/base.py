@@ -2,7 +2,9 @@ import abc
 import typing as ty
 
 import numpy
-from qiskit import BasicAer, QuantumCircuit, execute
+from qiskit import QuantumCircuit
+from qiskit.quantum_info.states import Statevector
+from qiskit_aer import AerSimulator
 
 from sqt import _constants
 from sqt._maths_helpers import couter
@@ -53,15 +55,19 @@ class BaseMeasurementBasis(abc.ABC):
         This only works for 1-qubit basis.
         """
         if not self._projector_states:
-            simulator = BasicAer.get_backend("statevector_simulator")
+            simulator = AerSimulator()
             for basis_change_circuit in self.basis_change_circuits:
                 inverted_basis_change_circuit = basis_change_circuit.inverse()
-                state: numpy.ndarray = (
-                    execute(inverted_basis_change_circuit, simulator)
+                #
+                inverted_basis_change_circuit.save_statevector()  # type: ignore
+                state = (
+                    simulator.run(inverted_basis_change_circuit)
                     .result()
                     .get_statevector(inverted_basis_change_circuit.name)
                 )
-                self._projector_states.append(state)
+                self._projector_states.append(
+                    state if not isinstance(state, Statevector) else state.data
+                )
         yield from self._projector_states
 
     @property

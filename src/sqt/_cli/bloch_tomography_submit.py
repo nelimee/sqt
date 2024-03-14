@@ -1,22 +1,17 @@
-import typing as ty
 import argparse
 import itertools as it
 import pickle
-from pathlib import Path
+import typing as ty
 from datetime import datetime
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from pathlib import Path
 
+from qiskit import QuantumCircuit
+from qiskit.providers.backend import BackendV2 as Backend
+from qiskit_aer import AerSimulator
+from qiskit_ibm_runtime import QiskitRuntimeService
+from qiskit_ibm_runtime import RuntimeJobV2 as RuntimeJob
 from rich import print
-
-from qiskit import IBMQ, QuantumCircuit
-from qiskit.providers.aer import AerSimulator
-from qiskit.providers.aer.jobs.aerjob import AerJob
-from qiskit.providers.aer.jobs.aerjobset import AerJobSet
-from qiskit.providers.ibmq import AccountProvider
-from qiskit.providers.ibmq.managed.managedjobset import ManagedJobSet
-
 from sqt.basis.base import BaseMeasurementBasis
-
 from sqt.basis.equidistant import (
     EquidistantMeasurementBasis,
     get_approximately_equidistant_circuits,
@@ -41,17 +36,15 @@ def get_backup_filename(
     raw_circuits: ty.List[QuantumCircuit],
     backend,
     basis: BaseMeasurementBasis,
-    job: ty.Union[ManagedJobSet, AerJob, AerJobSet],
+    job: RuntimeJob,
     delay_dt,
     shots: int,
 ) -> Path:
     now = datetime.now()
     now_str: str = now.isoformat()
-    jobid: str = (
-        job.job_id() if not isinstance(job, ManagedJobSet) else job.job_set_id()
-    )
+    jobid: str = job.job_id()
     filename: str = (
-        f"backend-{backend.name()}_basis-{basis.name}_points-{len(raw_circuits)}"
+        f"backend-{backend.name}_basis-{basis.name}_points-{len(raw_circuits)}"
         f"_delay-{delay_dt}_shots-{shots}_{now_str}_jobid-{jobid}.pkl"
     )
     path: Path = backup_dir / filename
@@ -74,7 +67,7 @@ def backup(
     hub: str,
     group: str,
     project: str,
-    job: ty.Union[ManagedJobSet, AerJobSet, AerJob],
+    job: RuntimeJob,
     delay_dt: int,
     qubit_number: int,
     shots: int,
@@ -82,18 +75,16 @@ def backup(
     backup_filename: Path = get_backup_filename(
         backup_dir, raw_circuits, backend, basis, job, delay_dt, shots
     )
-    jobid: str = (
-        job.job_id() if not isinstance(job, ManagedJobSet) else job.job_set_id()
-    )
-    result = job.result() if isinstance(job, (AerJob, AerJobSet)) else None
+    jobid: str = job.job_id()
+    result = job.result()
     print(f"Backing up in '{backup_filename}'.")
     with open(backup_filename, "wb") as f:
         pickle.dump(
             {
-                "job_set_id": jobid,
+                "job_id": jobid,
                 "raw_circuits": raw_circuits,
                 "basis": basis,
-                "backend_name": backend.name(),
+                "backend_name": backend.name,
                 "provider": {"hub": hub, "group": group, "project": project},
                 "delay_dt": delay_dt,
                 "qubit_number": qubit_number,
@@ -120,14 +111,15 @@ def _get_ibmq_backend(
     group: str,
     project: str,
     backend_name: str,
-) -> IBMQBackend:
-    if not IBMQ.active_account():
-        print(
-            f"Loading IBMQ provider with '{hub}' '{group}' '{project}'. This might take some time..."
+) -> Backend:
+    service = QiskitRuntimeService(
+        channel="ibm_quantum", instance=f"{hub}/{group}/{project}"
+    )
+    if not service.active_account():
+        raise RuntimeError(
+            f"Could not load account with '{hub}' '{group}' '{project}'."
         )
-        IBMQ.load_account()
-    provider: AccountProvider = IBMQ.get_provider(hub=hub, group=group, project=project)
-    potential_backends: ty.List = provider.backends(name=backend_name)
+    potential_backends: ty.List = service.backends(name=backend_name)
     if len(potential_backends) == 0:
         print(f"[bold red]No backend found with name '{backend_name}'.[/bold red]")
         print("[bold orange]Check that:[/bold orange]")
@@ -135,7 +127,7 @@ def _get_ibmq_backend(
         print("\t2. The provider you used has access to this backend.")
         print(
             "[bold green]Possible backends:[/bold green]\n\t- ",
-            "\n\t- ".join(b.name() for b in provider.backends()),
+            "\n\t- ".join(b.name for b in service.backends()),
             sep="",
         )
         exit()
@@ -143,7 +135,7 @@ def _get_ibmq_backend(
         print(
             f"[bold orange]More than one backend found with name '{backend_name}':[/bold orange]"
         )
-        print("\t- " + "\n\t- ".join(b.name() for b in potential_backends))
+        print("\t- " + "\n\t- ".join(b.name for b in potential_backends))
         exit()
 
     return potential_backends[0]
@@ -156,7 +148,7 @@ def get_backend(
     backend_name: str,
     local_backend: bool,
     noisy_simulator: bool,
-):
+) -> AerSimulator | Backend:
     if local_backend and not noisy_simulator:
         return AerSimulator(method="matrix_product_state")
     else:
@@ -167,37 +159,18 @@ def get_backend(
             return ibmq_backend
 
 
-def wait_for_job(managed_jobs: ty.Union[AerJob, AerJobSet, ManagedJobSet]) -> None:
-    if isinstance(managed_jobs, ManagedJobSet):
-        print(f"Waiting for IBMQ job with ID '{managed_jobs.job_set_id()}'...")
-        try:
-            for i, job in enumerate(managed_jobs.jobs()):
-                if job is None:
-                    print("One job failed to be submitted...")
-                    continue
-                print(
-                    "Note: you can safely terminate this program (via Ctrl-C or any other mean) "
-                    "and wait for the job to finish. You will then be able to recover the tomography "
-                    "results with the backup file printed above."
-                )
-                print(f"Waiting for the completion of job {i}")
-                job.wait_for_final_state()
-        except KeyboardInterrupt:
-            print(
-                "\r[orange]Interupting this program, the quantum circuit execution"
-                " is still in progress on IBM backend.[/orange]"
-            )
-    else:
-        print(f"[green]Job finished![/green]")
+def wait_for_job(job: RuntimeJob) -> None:
+    job.wait_for_final_state()
+    print("[green]Job finished![/green]")
 
 
 def submit_circuits(
     circuits: ty.List[QuantumCircuit],
-    backend,
+    backend: Backend | AerSimulator,
     rep_delay: ty.Optional[float],
     shots: int,
     delay_dt: int,
-) -> ty.Union[ManagedJobSet, AerJob, AerJobSet]:
+) -> RuntimeJob:
     print(f"Compiling the {len(circuits)} circuits that will be submitted.")
     compiled_circuits: ty.List[QuantumCircuit] = compile_circuits(circuits)
     print(f"Submitting {len(compiled_circuits)} circuits.")
@@ -207,8 +180,6 @@ def submit_circuits(
     job = submit(
         compiled_circuits, backend, tags=tags, rep_delay=rep_delay, shots=shots
     )
-    if isinstance(job, (AerJob, AerJobSet)):
-        job.wait_for_final_state()
     return job
 
 
@@ -275,7 +246,7 @@ def main():
     parser.add_argument(
         "--shots",
         type=int,
-        default=None,
+        default=20000,
         help="Number of shots performed for each circuit.",
     )
     parser.add_argument(
@@ -310,13 +281,13 @@ def main():
         args.local_backend,
         args.noisy_simulator,
     )
-    qubit_number: int = backend.configuration().num_qubits
+    qubit_number: int = backend.num_qubits
     if args.max_qubits is not None:
         qubit_number = min(qubit_number, args.max_qubits)
     basis: BaseMeasurementBasis = get_basis(args.basis, args.equidistant_points)
     print(
         f"Using {qubit_number} qubit{'s' if qubit_number > 1 else ''} "
-        f"from backend '{backend.name()}'."
+        f"from backend '{backend.name}'."
     )
     print(f"Using basis '{basis.name}'.")
 
@@ -338,11 +309,7 @@ def main():
             ]
         )
     )
-    shots: int
-    if args.shots is None:
-        shots = backend.configuration().max_shots
-    else:
-        shots = args.shots
+    shots: int = args.shots
     job = submit_circuits(
         tomography_circuits, backend, args.rep_delay, shots, args.delay_dt
     )
@@ -359,4 +326,5 @@ def main():
         qubit_number,
         shots,
     )
-    wait_for_job(job)
+    if args.local_backend:
+        wait_for_job(job)

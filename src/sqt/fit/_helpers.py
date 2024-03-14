@@ -5,7 +5,7 @@ from qiskit import QuantumCircuit
 from qiskit.result import Result
 
 from sqt.basis.base import BaseMeasurementBasis
-from sqt.circuits import get_tomography_circuit_name, get_parallelised_circuit_name
+from sqt.circuits import get_parallelised_circuit_name, get_tomography_circuit_name
 from sqt.counts import Counts
 
 NumericType = ty.Union[int, float, numpy.number]
@@ -33,13 +33,13 @@ def marginalise_all_counts(counts: Counts, qubit_number: int) -> ty.List[Counts]
         should be strictly greater than 2**qubit_number - 1
     :return: a list of the marginalised counts for each qubits.
     """
-    marginalised_counts: ty.List[ty.Dict[int, float]] = [
+    marginalised_counts: list[dict[int, float]] = [
         {0: 0, 1: 0} for _ in range(qubit_number)
     ]
     for measurement, probability in counts.items():
         for i in range(qubit_number):
             marginalised_counts[i][(measurement >> i) & 0b1] += probability
-    return [Counts(c) for c in marginalised_counts]
+    return [Counts(c) for c in marginalised_counts]  # type: ignore
 
 
 def compute_frequencies(
@@ -76,7 +76,7 @@ def compute_frequencies(
             get_tomography_circuit_name(tc_name, basis_change_name),
             qubit_number,
         )
-        counts: Counts = Counts(result.get_counts(parallelised_circuit_name))
+        counts: Counts = Counts(result.get_counts(parallelised_circuit_name))  # type: ignore
         counts_list: ty.List[Counts] = marginalise_all_counts(counts, qubit_number)
         for qubit_index, qubit_counts in enumerate(counts_list):
             frequencies[qubit_index][basis_change_name] = qubit_counts

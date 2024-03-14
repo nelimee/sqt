@@ -50,7 +50,7 @@ class TetrahedralMeasurementBasis(BaseMeasurementBasis):
         basis_changes[0].id(0)
         theta: float = 2 * numpy.arccos(numpy.sqrt(1 / 3))
         for i in range(3):
-            basis_changes[i + 1].u1(-2 * numpy.pi * i / 3, 0)
+            basis_changes[i + 1].p(-2 * numpy.pi * i / 3, 0)
             basis_changes[i + 1].ry(-theta, 0)
         return basis_changes
 

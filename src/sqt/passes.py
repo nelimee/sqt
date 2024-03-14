@@ -1,5 +1,5 @@
-import typing as ty
 import math
+import typing as ty
 
 import numpy
 import scipy.linalg
@@ -39,12 +39,12 @@ class Optimize1qGateIntoRzSX(TransformationPass):
         """
         runs = dag.collect_1q_runs()
         for r in runs:
-            operator = r[0].op.to_matrix()
+            operator = r[0].op.to_matrix().copy()
             for gate in r[1:]:
                 operator = gate.op.to_matrix().dot(operator)
             # Make the computed operator in SU2
             coeff = scipy.linalg.det(operator) ** (-0.5)
-            phase = -numpy.angle(coeff)
+            phase = float(-numpy.angle(coeff))
             operator *= coeff
             # Computing Euler angles
             theta: float = 2 * math.atan2(abs(operator[1, 0]), abs(operator[0, 0]))
@@ -71,6 +71,7 @@ class Optimize1qGateIntoRzSX(TransformationPass):
 def compile_circuits(circuits: ty.List[QuantumCircuit]) -> ty.List[QuantumCircuit]:
     """Merge 1-qubit gates with the Optimize1qGateIntoRzSX pass."""
     from qiskit.transpiler import PassManager
+
     from sqt.passes import Optimize1qGateIntoRzSX
 
     pass_sspin = Optimize1qGateIntoRzSX()

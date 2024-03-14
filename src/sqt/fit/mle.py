@@ -6,10 +6,10 @@ from qiskit.result import Result
 from scipy.optimize import minimize
 
 from sqt import _constants
-from sqt.basis.base import BaseMeasurementBasis
-from sqt.fit._helpers import compute_frequencies
 from sqt._maths_helpers import bloch_vector_to_density_matrix
+from sqt.basis.base import BaseMeasurementBasis
 from sqt.counts import Counts
+from sqt.fit._helpers import compute_frequencies
 
 
 def frequencies_to_mle_reconstruction(
@@ -42,7 +42,7 @@ def frequencies_to_mle_reconstruction(
     ) -> float:
         # Avoid non-physical states that confuse the optimiser
         penalty_factor: float = 0.0
-        s_norm: float = numpy.linalg.norm(s)
+        s_norm = float(numpy.linalg.norm(s))
         if s_norm > 1:
             # A simple
             #     return float('inf')

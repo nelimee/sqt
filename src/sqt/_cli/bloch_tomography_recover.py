@@ -1,19 +1,13 @@
-import typing as ty
 import argparse
 import pickle
+import typing as ty
 from pathlib import Path
 
 import numpy
-
-from qiskit import QuantumCircuit, IBMQ
-from qiskit.providers.aer.jobs.aerjob import AerJob
-from qiskit.providers.aer.jobs.aerjobset import AerJobSet
-from qiskit.providers.ibmq.managed.managedresults import ManagedResults
+from qiskit import QuantumCircuit
 from qiskit.result import Result
-from qiskit.providers.ibmq.managed import IBMQJobManager, ManagedJobSet
-
+from qiskit_ibm_runtime import QiskitRuntimeService
 from sqt.basis.base import BaseMeasurementBasis
-
 from sqt.fit.grad import post_process_tomography_results_grad
 from sqt.fit.lssr import post_process_tomography_results_lssr
 from sqt.fit.mle import post_process_tomography_results_mle
@@ -43,7 +37,7 @@ def unpack_data(
     with open(backup_filename, "rb") as f:
         data = pickle.load(f)
     return (
-        data["job_set_id"],
+        data["job_id"],
         data["raw_circuits"],
         data["basis"],
         data["backend_name"],
@@ -82,7 +76,7 @@ def main():
     args = parser.parse_args()
 
     (
-        job_set_id,
+        job_id,
         raw_circuits,
         basis,
         backend_name,
@@ -91,19 +85,16 @@ def main():
         result,
         shots,
     ) = unpack_data(args.backup_filepath)
-
+    hub, group, project = (provider_data[s] for s in ["hub", "group", "project"])
     results: Result = result
     if result is None:
-        if not IBMQ.active_account():
-            print("Loading IBMQ account, this might take some time...")
-            IBMQ.load_account()
-        print("Recovering provider and backend data...")
-        provider = IBMQ.get_provider(**provider_data)
-        print(f"Recovering results from job '{job_set_id}'...")
-        job_manager = IBMQJobManager()
-        job_set: ManagedJobSet = job_manager.retrieve_job_set(job_set_id, provider)
-        managed_result: ManagedResults = job_set.results()
-        results = managed_result.combine_results()
+        service = QiskitRuntimeService(
+            channel="ibm_quantum", instance=f"{hub}/{group}/{project}"
+        )
+        if not service.active_account():
+            raise RuntimeError(f"Could not load account with {provider_data}.")
+        print(f"Recovering results from job '{job_id}'...")
+        results = service.job(job_id).result()
 
     for post_processing_method_name in args.post_processing_method:
         print(f"Starting post-processing with '{post_processing_method_name}' method!")

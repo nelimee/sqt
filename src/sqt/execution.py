@@ -1,19 +1,16 @@
 import typing as ty
 
 from qiskit import QuantumCircuit
-from qiskit.result import Result
-from qiskit.providers.aer import AerSimulator, AerJob, AerJobSet
-from qiskit.providers.ibmq import IBMQBackend
-from qiskit.providers.ibmq.managed import IBMQJobManager, ManagedJobSet, ManagedJob
+from qiskit.providers.backend import BackendV2 as Backend
+from qiskit_ibm_runtime import RuntimeJobV2 as RuntimeJob
 
 
 def submit(
-    circuits: ty.List[QuantumCircuit],
-    backend: ty.Union[IBMQBackend, AerSimulator],
-    job_name: ty.Optional[str] = None,
-    tags: ty.Optional[ty.List[str]] = None,
+    circuits: list[QuantumCircuit],
+    backend: Backend,
+    tags: list[str] | None = None,
     **kwargs,
-) -> ty.Union[ManagedJobSet, AerJob, AerJobSet]:
+) -> RuntimeJob:
     """Submit the given circuits on the backend and returns.
 
     This function sumits the given circuits to the backend, using a job manager if
@@ -22,8 +19,6 @@ def submit(
 
     :param circuits: quantum circuit instances to execute on the given backend.
     :param backend: backend used to execute the given circuits.
-    :param job_name: prefix used for the job name. IBMQJobManager will add
-        a suffix for each job.
     :param tags: tags for each of the submitted jobs.
     :param kwargs: forwarded to the backend.run method.
         Configuration of the runtime environment. Some
@@ -37,26 +32,15 @@ def submit(
         Refer to the documentation on :func:`qiskit.compiler.assemble`
         for details on these arguments.
     """
-    if isinstance(backend, IBMQBackend):
-        manager = IBMQJobManager()
-        managed_job: ManagedJobSet = manager.run(
-            circuits, backend, name=job_name, job_tags=tags, **kwargs
-        )
-        return managed_job
-    else:
-        job: ty.Union[AerJob, AerJobSet] = backend.run(
-            circuits, name=job_name, job_tags=tags, **kwargs
-        )
-        return job
+    return backend.run(circuits, dynamic=False, job_tags=tags, **kwargs)  # type: ignore
 
 
 def execute(
     circuits: ty.List[QuantumCircuit],
-    backend: ty.Union[IBMQBackend, AerSimulator],
-    job_name: ty.Optional[str] = None,
+    backend: Backend,
     tags: ty.Optional[ty.List[str]] = None,
     **kwargs,
-) -> Result:
+):
     """Execute the given circuits on the backend and returns the result.
 
     This function sumits the given circuits to the backend, using a job manager if
@@ -80,8 +64,5 @@ def execute(
         Refer to the documentation on :func:`qiskit.compiler.assemble`
         for details on these arguments.
     """
-    job = submit(circuits, backend, job_name, tags, **kwargs)
-    if isinstance(job, ManagedJobSet):
-        return job.results().combine_results()
-    else:
-        return job.result()
+    job = submit(circuits, backend, tags, **kwargs)
+    return job.result()
