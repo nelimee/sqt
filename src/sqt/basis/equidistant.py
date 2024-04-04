@@ -1,10 +1,13 @@
-import numpy
 from qiskit import QuantumCircuit
+
+import numpy
+import numpy.typing as npt
+
 
 from sqt.basis.base import BaseMeasurementBasis
 
 
-def get_equidistant_points(N: int) -> list[numpy.ndarray]:
+def get_equidistant_points(N: int) -> list[tuple[float, float, float]]:
     """Generate approximately n points evenly distributed accros the 3-d sphere.
 
     This function tries to find approximately n points (might be a little less
@@ -16,7 +19,7 @@ def get_equidistant_points(N: int) -> list[numpy.ndarray]:
     # Unit sphere
     r = 1
 
-    points: list[numpy.ndarray] = list()
+    points: list[tuple[float, float, float]] = list()
 
     a = 4 * numpy.pi * r**2 / N
     d = numpy.sqrt(a)
@@ -31,20 +34,20 @@ def get_equidistant_points(N: int) -> list[numpy.ndarray]:
         for n in range(m_phi):
             phi = 2 * numpy.pi * n / m_phi
             points.append(
-                numpy.array(
-                    [
-                        numpy.sin(v) * numpy.cos(phi),
-                        numpy.sin(v) * numpy.sin(phi),
-                        numpy.cos(v),
-                    ]
+                (
+                    numpy.sin(v) * numpy.cos(phi),
+                    numpy.sin(v) * numpy.sin(phi),
+                    numpy.cos(v),
                 )
             )
     return points
 
 
 def points_to_xyz(
-    points: list[numpy.ndarray],
-) -> tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]:
+    points: list[tuple[float, float, float]],
+) -> tuple[
+    npt.NDArray[numpy.float_], npt.NDArray[numpy.float_], npt.NDArray[numpy.float_]
+]:
     """Transform a list of 3-dimensional points into 3 lists of coordinates.
 
     :param points: a list of 3-dimensional points like
@@ -55,7 +58,7 @@ def points_to_xyz(
     return p[:, 0], p[:, 1], p[:, 2]
 
 
-def point_to_circuit(point: numpy.ndarray, name: str) -> QuantumCircuit:
+def point_to_circuit(point: tuple[float, float, float], name: str) -> QuantumCircuit:
     """Transform a pure state into a QuantumCircuit that prepares this state.
 
     :param points: a pure state given as a 3-dimensional point in the cartesian
@@ -91,7 +94,7 @@ def get_approximately_equidistant_circuits(
             points = [eval(c.name) for c in circuits]
     """
     return [
-        point_to_circuit(point, f"{point.tolist()}")
+        point_to_circuit(point, f"{point}")
         for point in get_equidistant_points(approximate_point_number)
     ]
 
