@@ -18,4 +18,4 @@ The package provides 2 main modules:
 #                   post_process_tomography_results_lssr,
 #                   post_process_tomography_results_mle,
 #                   post_process_tomography_results_pauli)
-__version__ = "0.0.1"
+__version__ = "0.1.0"
