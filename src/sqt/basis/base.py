@@ -1,13 +1,13 @@
 import abc
 import typing as ty
 
-import numpy
 from qiskit import QuantumCircuit
 from qiskit.quantum_info.states import Statevector
 from qiskit_aer import AerSimulator
 
 from sqt import _constants
 from sqt._maths_helpers import couter
+from sqt._typing import QuantumState, ComplexMatrix
 
 
 class BaseMeasurementBasis(abc.ABC):
@@ -16,8 +16,8 @@ class BaseMeasurementBasis(abc.ABC):
     def __init__(self, name: str):
         """Initialise the basis with the given name."""
         self._name: str = name
-        self._projector_states: list[numpy.ndarray] = list()
-        self._projectors: list[tuple[numpy.ndarray, numpy.ndarray]] = list()
+        self._projector_states: list[QuantumState] = list()
+        self._projectors: list[tuple[ComplexMatrix, ComplexMatrix]] = list()
 
     @property
     @abc.abstractmethod
@@ -44,7 +44,7 @@ class BaseMeasurementBasis(abc.ABC):
         pass
 
     @property
-    def projector_states(self) -> ty.Iterator[numpy.ndarray]:
+    def projector_states(self) -> ty.Iterator[QuantumState]:
         """Return the states that represent the measurement basis.
 
         This method returns the states |phi_i> such that the POVM
@@ -66,12 +66,14 @@ class BaseMeasurementBasis(abc.ABC):
                     .get_statevector(inverted_basis_change_circuit.name)
                 )
                 self._projector_states.append(
-                    state if not isinstance(state, Statevector) else state.data
+                    state.astype(complex)
+                    if not isinstance(state, Statevector)
+                    else state.data
                 )
         yield from self._projector_states
 
     @property
-    def projectors(self) -> ty.Iterator[tuple[numpy.ndarray, numpy.ndarray]]:
+    def projectors(self) -> ty.Iterator[tuple[ComplexMatrix, ComplexMatrix]]:
         """Return the POVM projectors used for this basis.
 
         Each tuple corresponds to one projection basis, with the first entry of
@@ -84,8 +86,8 @@ class BaseMeasurementBasis(abc.ABC):
         """
         if not self._projectors:
             for state in self.projector_states:
-                proj: numpy.ndarray = couter(state, state)
-                orth: numpy.ndarray = _constants.I - proj
+                proj: ComplexMatrix = couter(state, state)
+                orth: ComplexMatrix = _constants.I - proj
                 self._projectors.append((proj, orth))
         yield from self._projectors
 
