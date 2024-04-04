@@ -1,17 +1,16 @@
 import typing as ty
-import numpy
 
+import numpy
 from qiskit import QuantumCircuit
 from qiskit.quantum_info.states import DensityMatrix, state_fidelity
-from qiskit_ibm_runtime import QiskitRuntimeService
 from qiskit_aer import AerSimulator
+from qiskit_ibm_runtime import QiskitRuntimeService
 
-
-from sqt.circuits import one_qubit_tomography_circuits
 from sqt.basis.tetrahedral import TetrahedralMeasurementBasis
+from sqt.circuits import one_qubit_tomography_circuits
 from sqt.fit.grad import post_process_tomography_results_grad
-from sqt.fit.mle import post_process_tomography_results_mle
 from sqt.fit.lssr import post_process_tomography_results_lssr
+from sqt.fit.mle import post_process_tomography_results_mle
 
 hub = "ibm-q-lanl"
 group = "lanl"
@@ -59,7 +58,7 @@ for method in METHODS:
         result, raw_circuit, basis, qubit_number=qubit_number
     )
 
-# This method
+# This method is automatically added to the QuantumCircuit class by qiskit.
 raw_circuit.save_density_matrix()  # type: ignore
 dm_result = exact_simulator.run(raw_circuit).result()
 exact_density_matrix: numpy.ndarray = dm_result.results[0].data.density_matrix
