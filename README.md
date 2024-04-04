@@ -14,8 +14,9 @@ and continued during my PhD.
 ### Install
 
 In order to start using the code in this repository, first install the `sqt` package with the command
+
 ```sh
-git clone git@github.com/nelimee/sqt
+git clone https://github.com/nelimee/sqt.git
 python -m pip install -e sqt/
 ```
 
@@ -28,10 +29,11 @@ The `sqt` package provides scripts that are installed along with the package.
 This script makes the circuit building and submission process easier by providing a simple interface to the user.
 
 The script inputs can be listed with the `--help` option:
-```
+
+```text
 >>> sqt_bloch_tomography_submit --help
-usage: sqt_bloch_tomography_submit [-h] [--equidistant-points EQUIDISTANT_POINTS] [--hub HUB] [--group GROUP] [--project PROJECT] [--backup-dir BACKUP_DIR] [--rep-delay REP_DELAY] [--shots SHOTS]
-                                   [--delay-dt DELAY_DT] [--max-qubits MAX_QUBITS] [--local-backend] [--noisy-simulator]
+usage: sqt_bloch_tomography_submit [-h] [--equidistant-points EQUIDISTANT_POINTS] [--hub HUB] [--group GROUP] [--project PROJECT] [--backup-dir BACKUP_DIR] [--rep-delay REP_DELAY] [--shots SHOTS] [--delay-dt DELAY_DT]
+                                   [--max-qubits MAX_QUBITS] [--local-backend] [--noisy-simulator]
                                    backend approximate_point_number {pauli,tetrahedral,equidistant}
 
 Execute the circuits to perform state tomography for approximately uniformly distributed quantum states over the Bloch sphere.
@@ -43,7 +45,7 @@ positional arguments:
   {pauli,tetrahedral,equidistant}
                         Name of the tomography basis used to perform quantum state tomography.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   --equidistant-points EQUIDISTANT_POINTS
                         If basis is 'equidistant', the number of approximately equidistant projectors that will be used. Else, this option is ignored.
@@ -63,14 +65,18 @@ optional arguments:
 ```
 
 Here are some examples of usage:
+
 ```sh
->>> sqt_bloch_tomography_submit --hub ibm-q --group open --project main ibmq_lima 100 tetrahedral
-# In the following, the argument imbq_lima is ignored due to the option
+# Submiting the quantum circuits to tomography approximately 100 different (and
+# approximately evenly-spread on the Bloch sphere) 1-qubit states using the 
+# tetrahedral basis (4 measurements) on ibm_algiers.
+>>> sqt_bloch_tomography_submit --hub ibm-q --group open --project main ibm_algiers 100 tetrahedral
+# In the following, the argument ibm_algiers is ignored due to the option
 # --local-backend being given.
->>> sqt_bloch_tomography_submit ibmq_lima 100 tetrahedral --local-backend
-# In the following, a noisy simulator initialised with ibmq_lima current calibrations will
+>>> sqt_bloch_tomography_submit ibm_algiers 100 tetrahedral --local-backend
+# In the following, a noisy simulator initialised with ibm_algiers current calibrations will
 # be used.
->>> sqt_bloch_tomography_submit --hub ibm-q --group open --project main ibmq_lima 100 tetrahedral --noisy-simulator
+>>> sqt_bloch_tomography_submit --hub ibm-q --group open --project main ibm_algiers 100 tetrahedral --noisy-simulator
 ```
 
 You can of course use a custom provider, change the `rep_delay` value for backends that implement this feature, specify a maximum number of qubits to use (useful for the simulators and can be used to limit the number of qubits used on a given backend) or change the directory that will be used to store the backup file.
@@ -82,7 +88,8 @@ The backup file is the main output of this script: it contains all the needed in
 This script takes as input a backup file created with `sqt_bloch_tomography_submit` and reconstructs the density matrices representing the tomographied quantum state with the provided reconstruction method.
 
 The script inputs can be listed with the `--help` option:
-```
+
+```text
 >>> sqt_bloch_tomography_recover --help
 usage: sqt_bloch_tomography_recover [-h]
                                     backup_filepath {mle,pauli,lssr,grad}
@@ -100,6 +107,7 @@ optional arguments:
 ```
 
 Here are some examples of usage:
+
 ```sh
 # Replace the "[file with .pkl extension]" with the backup file
 # obtained with sqt_bloch_tomography_submit
@@ -134,7 +142,6 @@ equidistant_basis = EquidistantMeasurementBasis(approximative_point_number=10)
 basis = tetrahedral_basis
 ```
 
-
 ### 2. Construct the tomography circuits
 
 Once the basis has been picked, a simple call to `one_qubit_tomography_circuits` will generate all the necessary quantum circuits to perform quantum tomography.
@@ -152,19 +159,18 @@ tomography_circuits = one_qubit_tomography_circuits(
 )
 ```
 
-Parallel execution of 1-qubit tomography circuits is natively supported by `sqt` and is provided as simple keywords 
+Parallel execution of 1-qubit tomography circuits is natively supported by `sqt` and is provided as simple keywords.
 
 ### 3. Post process the results
 
 Now that the quantum circuits returned by `one_qubit_tomography_circuits` have been executed, they should be processed in order to recover the density matrix.
-```python
-from qiskit import execute
 
+```python
 from sqt.fit.grad import post_process_tomography_results_grad
 from sqt.fit.mle import post_process_tomography_results_mle
 
 backend = None # Fill this with the backend of your choice
-result = execute(tomography_circuits, backend).result()
+result = backend.run(tomography_circuits).result()
 
 density_matrices = post_process_tomography_results_mle(
     result, 
