@@ -1,0 +1,6 @@
+qiskit ~= 1.0
+qiskit-ibm-provider
+qiskit-ibm-runtime
+qiskit-aer
+numpy
+rich

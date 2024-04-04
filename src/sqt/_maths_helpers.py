@@ -27,8 +27,9 @@ def get_orthogonal_state(state: numpy.ndarray) -> numpy.ndarray:
     inverse_projector_matrix: numpy.ndarray = _constants.I - projector_matrix
     ra = numpy.sqrt(inverse_projector_matrix[0, 0])
     rb = numpy.sqrt(inverse_projector_matrix[1, 1])
-    thetaa, thetab = -numpy.angle(state[1]), -numpy.angle(state[1]) + numpy.angle(
-        inverse_projector_matrix[0, 1]
+    thetaa, thetab = (
+        -numpy.angle(state[1]),
+        -numpy.angle(state[1]) + numpy.angle(inverse_projector_matrix[0, 1]),
     )
     orthogonal_state: numpy.ndarray = numpy.array(
         [ra * numpy.exp(1.0j * thetaa), rb * numpy.exp(1.0j * thetab)],

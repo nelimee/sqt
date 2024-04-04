@@ -1,20 +1,33 @@
 import typing as ty
+
 import numpy
+from qiskit import QuantumCircuit
+from qiskit.quantum_info.states import DensityMatrix, state_fidelity
+from qiskit_aer import AerSimulator
+from qiskit_ibm_runtime import QiskitRuntimeService
 
-from qiskit import QuantumCircuit, IBMQ, circuit
-from qiskit.providers.aer import AerSimulator
-
-from sqt.circuits import one_qubit_tomography_circuits
 from sqt.basis.tetrahedral import TetrahedralMeasurementBasis
+from sqt.circuits import one_qubit_tomography_circuits
 from sqt.fit.grad import post_process_tomography_results_grad
-from sqt.fit.mle import post_process_tomography_results_mle
 from sqt.fit.lssr import post_process_tomography_results_lssr
+from sqt.fit.mle import post_process_tomography_results_mle
 
-if not IBMQ.active_account():
-    IBMQ.load_account()
-provider = IBMQ.get_provider(hub="ibm-q-lanl", group="lanl", project="quantum-simulati")
-backend = provider.get_backend("ibmq_bogota")
+hub = "ibm-q-lanl"
+group = "lanl"
+project = "quantum-simulati"
+backend_name = "ibm_algiers"
+
+print(f"Recovering IBMQ backend {backend_name} with {hub}/{group}/{project}.")
+service = QiskitRuntimeService(
+    channel="ibm_quantum", instance=f"{hub}/{group}/{project}"
+)
+if not service.active_account():
+    raise RuntimeError(f"Could not load account with '{hub}' '{group}' '{project}'.")
+backend = service.get_backend("ibm_algiers")
+print(f"Initialising a noisy simulator with {backend_name} calibrations.")
 simulator = AerSimulator.from_backend(backend)
+qubit_number: int = 5
+max_shots: int = simulator.configuration().max_shots
 
 METHODS = {
     "grad": post_process_tomography_results_grad,
@@ -27,13 +40,16 @@ raw_circuit = QuantumCircuit(1, 1, name="Ry(pi/8)")
 raw_circuit.ry(numpy.pi / 8, 0)
 raw_circuit.rz(numpy.pi / 3, 0)
 
-qubit_number: int = simulator.configuration().num_qubits
 basis = TetrahedralMeasurementBasis()
 tomography_circuits = one_qubit_tomography_circuits(
     raw_circuit, basis, qubit_number=qubit_number
 )
 
-max_shots: int = simulator.configuration().max_shots
+print(
+    f"Running {len(tomography_circuits)} circuits, each with "
+    f"{max_shots} shots and {qubit_number} qubits. The 1-qubit output "
+    "density matrices of each qubit will be computed."
+)
 result = simulator.run(tomography_circuits, shots=max_shots).result()
 
 density_matrices: ty.Dict[str, ty.List[numpy.ndarray]] = {}
@@ -42,22 +58,26 @@ for method in METHODS:
         result, raw_circuit, basis, qubit_number=qubit_number
     )
 
-raw_circuit.save_density_matrix()
+# This method is automatically added to the QuantumCircuit class by qiskit.
+raw_circuit.save_density_matrix()  # type: ignore
 dm_result = exact_simulator.run(raw_circuit).result()
 exact_density_matrix: numpy.ndarray = dm_result.results[0].data.density_matrix
 
-from qiskit.quantum_info.states import DensityMatrix, state_fidelity
 
-print()
+print(
+    "Fidelity of the quantum states reconstructed from the 1-qubit tomography experiment "
+    f"on the noisy simulator initialised with {backend_name} calibrations:"
+)
+
 exact_state = DensityMatrix(exact_density_matrix)
 # print(exact_state)
 for i in range(qubit_number):
+    print(f"Qubit {i}")
     for m in METHODS:
         obtained_state = DensityMatrix(density_matrices[m][i])
         # print(obtained_state)
         fidelity: float = state_fidelity(exact_state, obtained_state, validate=False)
-        print(f"Using {m:>5}: {1 - fidelity:.4e}")
-    print("=" * 80)
+        print(f"\tUsing {m:>5}: {1 - fidelity:.4e}")
 # print(exact_state)
 
 # print(raw_circuit.draw())

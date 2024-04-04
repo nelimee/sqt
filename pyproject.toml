@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sqt"
+description = "Single Qubit Tomography package developped during the Quantum Computing Summer School 2021 at Los Alamos National Laboratory"
+authors = [{ name = "Adrien Suau", email = "adrien.suau+sqt@protonmail.com" }]
+maintainers = [
+    { name = "Adrien Suau", email = "adrien.suau+sqt@protonmail.com" },
+]
+
+readme = "README.md"
+keywords = ["quantum", "tomography", "single qubit"]
+dynamic = ["version"]
+dependencies = [
+    "qiskit ~= 1.0",
+    "qiskit-ibm-provider",
+    "qiskit-ibm-runtime",
+    "qiskit-aer",
+    "numpy",
+    "rich",
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/nelimee/sqt"
+Repository = "https://github.com/nelimee/sqt"
+Issues = "https://github.com/nelimee/sqt/issues"
+
+[project.scripts]
+sqt_bloch_tomography_submit = "sqt._cli.bloch_tomography_submit:main"
+sqt_bloch_tomography_recover = "sqt._cli.bloch_tomography_recover:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "sqt.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+sqt = ["*.txt", "*.rst", "py.typed"]
