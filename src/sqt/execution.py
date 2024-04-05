@@ -1,14 +1,18 @@
 from qiskit import QuantumCircuit
 from qiskit.providers.backend import BackendV2 as Backend
-from qiskit_ibm_runtime import RuntimeJobV2 as RuntimeJob
+
+from sqt.job import BaseJob
 
 
 def submit(
     circuits: list[QuantumCircuit],
     backend: Backend,
+    hub: str,
+    group: str,
+    project: str,
     tags: list[str] | None = None,
     **kwargs,
-) -> RuntimeJob:
+) -> BaseJob:
     """Submit the given circuits on the backend and returns.
 
     This function sumits the given circuits to the backend, using a job manager if
@@ -30,12 +34,16 @@ def submit(
         Refer to the documentation on :func:`qiskit.compiler.assemble`
         for details on these arguments.
     """
-    return backend.run(circuits, dynamic=False, job_tags=tags, **kwargs)  # type: ignore
+    job = backend.run(circuits, dynamic=False, job_tags=tags, **kwargs)
+    return BaseJob.from_job(job, hub, group, project)  # type: ignore
 
 
 def execute(
     circuits: list[QuantumCircuit],
     backend: Backend,
+    hub: str,
+    group: str,
+    project: str,
     tags: list[str] | None = None,
     **kwargs,
 ):
@@ -62,5 +70,5 @@ def execute(
         Refer to the documentation on :func:`qiskit.compiler.assemble`
         for details on these arguments.
     """
-    job = submit(circuits, backend, tags, **kwargs)
+    job = submit(circuits, backend, hub, group, project, tags, **kwargs)
     return job.result()
