@@ -20,6 +20,7 @@ from sqt.basis.pauli import PauliMeasurementBasis
 from sqt.basis.tetrahedral import TetrahedralMeasurementBasis
 from sqt.circuits import one_qubit_tomography_circuits
 from sqt.execution import submit
+from sqt.job import BaseJob
 from sqt.passes import compile_circuits
 
 _BASIS = {
@@ -36,13 +37,13 @@ def get_backup_filename(
     raw_circuits: list[QuantumCircuit],
     backend,
     basis: BaseMeasurementBasis,
-    job: RuntimeJob,
+    job: BaseJob,
     delay_dt,
     shots: int,
 ) -> Path:
     now = datetime.now()
     now_str: str = now.isoformat()
-    jobid: str = job.job_id()
+    jobid: str = job.id()
     backend_name: str = backend.name.strip("' ").replace("(", "-").replace(")", "-")
     filename: str = (
         f"backend-{backend_name}_basis-{basis.name}_points-{len(raw_circuits)}"
@@ -65,10 +66,7 @@ def backup(
     raw_circuits: list[QuantumCircuit],
     backend,
     basis: BaseMeasurementBasis,
-    hub: str,
-    group: str,
-    project: str,
-    job: RuntimeJob,
+    job: BaseJob,
     delay_dt: int,
     qubit_number: int,
     shots: int,
@@ -76,21 +74,17 @@ def backup(
     backup_filename: Path = get_backup_filename(
         backup_dir, raw_circuits, backend, basis, job, delay_dt, shots
     )
-    jobid: str = job.job_id()
-    result = job.result()
     print(f"Backing up in '{backup_filename}'.")
     with open(backup_filename, "wb") as f:
         pickle.dump(
             {
-                "job_id": jobid,
                 "raw_circuits": raw_circuits,
                 "basis": basis,
                 "backend_name": backend.name,
-                "provider": {"hub": hub, "group": group, "project": project},
                 "delay_dt": delay_dt,
                 "qubit_number": qubit_number,
-                "result": result,
                 "shots": shots,
+                "job": job.to_dict(),
             },
             f,
         )
@@ -171,7 +165,10 @@ def submit_circuits(
     rep_delay: float | None,
     shots: int,
     delay_dt: int,
-) -> RuntimeJob:
+    hub: str,
+    group: str,
+    project: str,
+) -> BaseJob:
     print(f"Compiling the {len(circuits)} circuits that will be submitted.")
     compiled_circuits: list[QuantumCircuit] = compile_circuits(circuits)
     print(f"Submitting {len(compiled_circuits)} circuits.")
@@ -179,7 +176,14 @@ def submit_circuits(
     if rep_delay is not None:
         tags.append(f"rep_delay={rep_delay}")
     job = submit(
-        compiled_circuits, backend, tags=tags, rep_delay=rep_delay, shots=shots
+        compiled_circuits,
+        backend,
+        hub,
+        group,
+        project,
+        tags=tags,
+        rep_delay=rep_delay,
+        shots=shots,
     )
     return job
 
@@ -312,20 +316,22 @@ def main():
     )
     shots: int = args.shots
     job = submit_circuits(
-        tomography_circuits, backend, args.rep_delay, shots, args.delay_dt
+        tomography_circuits,
+        backend,
+        args.rep_delay,
+        shots,
+        args.delay_dt,
+        args.hub,
+        args.group,
+        args.project,
     )
     backup(
         args.backup_dir,
         circuits,
         backend,
         basis,
-        args.hub,
-        args.group,
-        args.project,
         job,
         args.delay_dt,
         qubit_number,
         shots,
     )
-    if args.local_backend:
-        wait_for_job(job)

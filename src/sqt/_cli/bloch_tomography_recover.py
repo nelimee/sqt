@@ -6,13 +6,13 @@ from pathlib import Path
 import numpy
 from qiskit import QuantumCircuit
 from qiskit.result import Result
-from qiskit_ibm_runtime import QiskitRuntimeService
 
 from sqt.basis.base import BaseMeasurementBasis
 from sqt.fit.grad import post_process_tomography_results_grad
 from sqt.fit.lssr import post_process_tomography_results_lssr
 from sqt.fit.mle import post_process_tomography_results_mle
 from sqt.fit.pauli import post_process_tomography_results_pauli
+from sqt.job import BaseJob
 
 _POST_PROCESSING = {
     "grad": post_process_tomography_results_grad,
@@ -24,27 +24,16 @@ _POST_PROCESSING = {
 
 def unpack_data(
     backup_filename: Path,
-) -> tuple[
-    str,
-    list[QuantumCircuit],
-    BaseMeasurementBasis,
-    str,
-    dict[str, str],
-    int,
-    Result,
-    int,
-]:
+) -> tuple[BaseJob, list[QuantumCircuit], BaseMeasurementBasis, str, int, int]:
     print(f"Recovering data from '{backup_filename}'.")
     with open(backup_filename, "rb") as f:
         data = pickle.load(f)
     return (
-        data["job_id"],
+        BaseJob.from_dict(data["job"]),
         data["raw_circuits"],
         data["basis"],
         data["backend_name"],
-        data["provider"],
         data["qubit_number"],
-        data["result"],
         data["shots"],
     )
 
@@ -76,27 +65,10 @@ def main():
     # )
     args = parser.parse_args()
 
-    (
-        job_id,
-        raw_circuits,
-        basis,
-        backend_name,
-        provider_data,
-        qubit_number,
-        result,
-        shots,
-    ) = unpack_data(args.backup_filepath)
-    hub, group, project = (provider_data[s] for s in ["hub", "group", "project"])
-    results: Result = result
-    if result is None:
-        service = QiskitRuntimeService(
-            channel="ibm_quantum", instance=f"{hub}/{group}/{project}"
-        )
-        if not service.active_account():
-            raise RuntimeError(f"Could not load account with {provider_data}.")
-        print(f"Recovering results from job '{job_id}'...")
-        results = service.job(job_id).result()
-
+    (job, raw_circuits, basis, backend_name, qubit_number, shots) = unpack_data(
+        args.backup_filepath
+    )
+    results: Result = job.result()
     for post_processing_method_name in args.post_processing_method:
         print(f"Starting post-processing with '{post_processing_method_name}' method!")
         post_processing_method: ty.Callable[
@@ -129,7 +101,6 @@ def main():
                     "density_matrices": data,
                     "backend_name": backend_name,
                     "basis_name": basis.name,
-                    "provider": provider_data,
                     "post_processing_method": post_processing_method_name,
                     "shots": shots,
                 },
