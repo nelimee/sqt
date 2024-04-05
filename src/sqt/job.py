@@ -5,8 +5,7 @@ from abc import ABC, abstractmethod
 
 from qiskit.result import Result
 from qiskit_aer.jobs import AerJob, AerJobSet
-from qiskit_ibm_runtime import QiskitRuntimeService
-from qiskit_ibm_runtime import RuntimeJobV2 as RuntimeJob
+from qiskit_ibm_runtime import QiskitRuntimeService, RuntimeJob
 
 
 class BaseJob(ABC):
