@@ -50,9 +50,12 @@ def points_to_xyz(
 ]:
     """Transform a list of 3-dimensional points into 3 lists of coordinates.
 
-    :param points: a list of 3-dimensional points like
-        [[x1, y1, z1], [x2, y2, z2]].
-    :return: 3 arrays of coordinates like ([x1, x2], [y1, y2], [z1, z2]).
+    Args:
+        points: a list of 3-dimensional points like [[x1, y1, z1], [x2,
+            y2, z2]].
+
+    Returns:
+        3 arrays of coordinates like ([x1, x2], [y1, y2], [z1, z2]).
     """
     p = numpy.asarray(points)
     return p[:, 0], p[:, 1], p[:, 2]
@@ -61,9 +64,12 @@ def points_to_xyz(
 def point_to_circuit(point: tuple[float, float, float], name: str) -> QuantumCircuit:
     """Transform a pure state into a QuantumCircuit that prepares this state.
 
-    :param points: a pure state given as a 3-dimensional point in the cartesian
-        coordinate system.
-    :return: a QuantumCircuit instance that prepare the state given by the
+    Args:
+        points: a pure state given as a 3-dimensional point in the
+            cartesian coordinate system.
+
+    Returns:
+        a QuantumCircuit instance that prepare the state given by the
         point parameter if the initial state is |0>.
     """
     circuit = QuantumCircuit(1, name=name)
@@ -83,13 +89,17 @@ def get_approximately_equidistant_circuits(
     quantum circuits that will prepare quantum states that are approximately
     equidistant when placed on the Bloch sphere.
 
-    :param approximate_point_number: number of circuits that will be generated.
-        This is only an approximation, the actual number of circuits that will
-        be generated might be slightly lower or higher.
-    :return: the generated circuits. Each circuit will have a name that is
+    Args:
+        approximate_point_number: number of circuits that will be
+            generated. This is only an approximation, the actual number
+            of circuits that will be generated might be slightly lower
+            or higher.
+
+    Returns:
+        the generated circuits. Each circuit will have a name that is
         the list representation of the point it prepares. This point can
-        be retrieved with the following code (yes it is ugly, I am searching
-        for a better alternative):
+        be retrieved with the following code (yes it is ugly, I am
+        searching for a better alternative):
             circuits = get_approximately_equidistant_circuits(10)
             points = [eval(c.name) for c in circuits]
     """
@@ -114,10 +124,12 @@ class EquidistantMeasurementBasis(BaseMeasurementBasis):
     def __init__(self, approximative_point_number: int):
         """Initialise an instance of EquidistantMeasurementBasis.
 
-        :param approximative_point_number: the number of points requested by
-            the user. Due to the algorithm used to generate approximately
-            equidistant points, the actual number of circuits in the basis
-            might not be exactly the number requested by the user.
+        Args:
+            approximative_point_number: the number of points requested
+                by the user. Due to the algorithm used to generate
+                approximately equidistant points, the actual number of
+                circuits in the basis might not be exactly the number
+                requested by the user.
         """
         super().__init__(f"equidistant-{approximative_point_number}")
         self._approximative_point_number: int = approximative_point_number
@@ -138,7 +150,8 @@ class EquidistantMeasurementBasis(BaseMeasurementBasis):
         sphere and generates the quantum circuits needed to perform a
         measurement in the basis represented by each of these points.
 
-        :return: all the basis change needed to perform the state tomography
+        Returns:
+            all the basis change needed to perform the state tomography
             process.
         """
         return self._basis_change_circuits

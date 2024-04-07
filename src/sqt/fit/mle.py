@@ -25,12 +25,16 @@ def frequencies_to_mle_reconstruction(
     Moreover, the MLE cost function gradient has also been modified to point
     towards the center of the Bloch sphere if a non-physical state occurs.
 
-    :param frenquencies: the estimated frequencies as a list of mappings
-        {basis_change_str -> {state -> frequency}} where basis_change_str is
-        the name of the quantum circuit performing the basis change, state is
-        either "0" or "1" for 1-qubit and frequency is the estimated frequency.
-    :param basis: the tomography basis used.
-    :return: the reconstructed density matrix.
+    Args:
+        frenquencies: the estimated frequencies as a list of mappings
+            {basis_change_str -> {state -> frequency}} where
+            basis_change_str is the name of the quantum circuit
+            performing the basis change, state is either "0" or "1" for
+            1-qubit and frequency is the estimated frequency.
+        basis: the tomography basis used.
+
+    Returns:
+        the reconstructed density matrix.
     """
 
     def inverse_likelyhood(
@@ -125,19 +129,24 @@ def post_process_tomography_results_mle(
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,
 ) -> list[numpy.ndarray]:
-    """
-    Compute and return the density matrix computed via state tomography.
+    """Compute and return the density matrix computed via state tomography.
 
     This function uses the Maximum Likelyhood Estimation method.
 
-    :param result: the Result instance returned by the QPU after executing all
-        the circuits returned by the one_qubit_tomography_circuits function.
-    :param tomographied_circuit: the quantum circuit instance that is currently
-        tomographied. Used to recover the circuit name.
-    :param basis: the basis in which the measurements will be done.
-    :param qubit_number: the number of qubits the parallel 1-qubit tomography
-        should be performed on. Default to 1, i.e. no parallel execution.
-    :return: the 2 by 2 density matrix representing the prepared quantum state.
+    Args:
+        result: the Result instance returned by the QPU after executing
+            all the circuits returned by the
+            one_qubit_tomography_circuits function.
+        tomographied_circuit: the quantum circuit instance that is
+            currently tomographied. Used to recover the circuit name.
+        basis: the basis in which the measurements will be done.
+        qubit_number: the number of qubits the parallel 1-qubit
+            tomography should be performed on. Default to 1, i.e. no
+            parallel execution.
+
+    Returns:
+        the 2 by 2 density matrix representing the prepared quantum
+        state.
     """
     # Compute the frequencies
     frequencies: list[dict[str, Counts]] = compute_frequencies(

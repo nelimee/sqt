@@ -33,8 +33,11 @@ class Optimize1qGateIntoRzSX(TransformationPass):
     def run(self, dag: DAGCircuit) -> DAGCircuit:
         """Run the Optimize1qGateIntoRzSX pass on `dag`.
 
-        :param dag: the DAG to be optimized.
-        :return: the optimized DAG.
+        Args:
+            dag: the DAG to be optimized.
+
+        Returns:
+            the optimized DAG.
         """
         runs = dag.collect_1q_runs()
         for r in runs:

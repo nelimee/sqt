@@ -28,7 +28,8 @@ class BaseMeasurementBasis(abc.ABC):
         circuits that are needed to perform the different measurements in
         the desired basis.
 
-        :return: an iterable on the basis change QuantumCircuit instances.
+        Returns:
+            an iterable on the basis change QuantumCircuit instances.
         """
         pass
 
@@ -82,7 +83,8 @@ class BaseMeasurementBasis(abc.ABC):
 
         This only works for 1-qubit basis.
 
-        :return: the 1-qubit projectors implemented by this basis.
+        Returns:
+            the 1-qubit projectors implemented by this basis.
         """
         if not self._projectors:
             for state in self.projector_states:
