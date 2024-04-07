@@ -34,7 +34,8 @@ class TetrahedralMeasurementBasis(BaseMeasurementBasis):
           circuit notation, i.e. the first gate applied comes first in the name.
         - "dg" stands for "dagger", i.e. the complex conjuguate.
 
-        :return: all the basis change needed to perform the state tomography
+        Returns:
+            all the basis change needed to perform the state tomography
             process.
         """
         basis_changes: list[QuantumCircuit] = [

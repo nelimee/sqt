@@ -26,9 +26,12 @@ from sqt.fit._helpers import compute_frequencies
 def frobenius_inner_product(A: numpy.ndarray, B: numpy.ndarray) -> float:
     """Return the Frobenius inner product between the two given arrays.
 
-    :param A: a 2-dimensional matrix.
-    :param B: a 2-dimensional matrix.
-    :return: the Frobenius inner product between A and B.
+    Args:
+        A: a 2-dimensional matrix.
+        B: a 2-dimensional matrix.
+
+    Returns:
+        the Frobenius inner product between A and B.
     """
     # TODO: check validity of that.
     return numpy.inner(A.T.conj().ravel(), B.ravel())
@@ -42,13 +45,16 @@ def negative_log_likelyhood(
 ) -> float:
     """Compute the negative log likelyhood value for the given parameters.
 
-    :param density_matrix: the trial density matrix whose quality should be
-        estimated using the negative log likelyhood formula.
-    :param projector_matrices: the projectors used to measure the given
-        observed frequencies.
-    :param observed_frequencies: the frequencies computed from the hardware
-        returns.
-    :return: the negative log likelyhood of the given density matrix.
+    Args:
+        density_matrix: the trial density matrix whose quality should be
+            estimated using the negative log likelyhood formula.
+        projector_matrices: the projectors used to measure the given
+            observed frequencies.
+        observed_frequencies: the frequencies computed from the hardware
+            returns.
+
+    Returns:
+        the negative log likelyhood of the given density matrix.
     """
     result = -sum(
         observed_frequencies[k]
@@ -66,16 +72,20 @@ def negative_log_likelyhood_gradient(
 ):
     """Compute the negative log likelyhood gradient for the given parameters.
 
-    :param density_matrix: the trial density matrix whose quality should be
-        estimated using the negative log likelyhood formula.
-    :param projector_vectors: the states we project in before each measurement.
-        Each entry in projector_matrices can be computed from projector_vectors
-        but we require both as parameters to save computations.
-    :param projector_matrices: the projectors used to measure the given
-        observed frequencies.
-    :param observed_frequencies: the frequencies computed from the hardware
-        returns.
-    :return: the negative log likelyhood of the given density matrix.
+    Args:
+        density_matrix: the trial density matrix whose quality should be
+            estimated using the negative log likelyhood formula.
+        projector_vectors: the states we project in before each
+            measurement. Each entry in projector_matrices can be
+            computed from projector_vectors but we require both as
+            parameters to save computations.
+        projector_matrices: the projectors used to measure the given
+            observed frequencies.
+        observed_frequencies: the frequencies computed from the hardware
+            returns.
+
+    Returns:
+        the negative log likelyhood of the given density matrix.
     """
     projector_number: int = len(projector_vectors)
     gradient = numpy.zeros_like(density_matrix)
@@ -131,37 +141,41 @@ def line_search(
     The backtracking line search try to find a good gradient step (or learning
     rate) in order to fullfil the Wolfe condition.
 
-    :warning:
-    This method is currently not working correctly and systematically returns
-    a value of 0.001 that has been empirically determined as sufficiently small
-    for the optimisation problems I had. This value might be too large for
-    other optimisation problems.
+    Args:
+        density_matrix: the current trial density matrix.
+        projector_matrices: the projectors used to measure the given
+            observed frequencies.
+        observed_frequencies: the frequencies computed from the hardware
+            returns.
+        gradient: the value of the log likelyhood gradient at the given
+            density matrix.
+        previous_gradient_step: the gradient step that has been used
+            previously. Used as a starting point for the gradient step
+            line search.
+        c: parameter from Section 1.2 The Basic Gradient Projection Method
+            of https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf.
+        gamma: parameter from Section 1.2 The Basic Gradient Projection Method
+            of https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf.
 
-    Some observations on this method: it seems like the line search does not
-    work because there are cases where the projection makes the actual descent
-    direction in the oposite direction of the gradient. In other words, if d
-    is the descent direction, obtained with the formula
+    Todo:
+        This method is currently not working correctly and systematically returns
+        a value of 0.001 that has been empirically determined as sufficiently small
+        for the optimisation problems I had. This value might be too large for
+        other optimisation problems.
 
-    d = proj(rho - gradient_step * gradient) - rho
+        Some observations on this method: it seems like the line search does not
+        work because there are cases where the projection makes the actual descent
+        direction in the oposite direction of the gradient. In other words, if d
+        is the descent direction, obtained with the formula
 
-    then there are cases where <d , gradient> < 0, i.e. d does not follow the
-    gradient anymore but goes **backward**. I suspect this is due to some
-    conditions that are not fulfilled by the problem (convexity, continuity,
-    condition on the projection, ...?), but I do not have any proof yet.
+        d = proj(rho - gradient_step * gradient) - rho
 
-    See https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf
+        then there are cases where <d , gradient> < 0, i.e. d does not follow the
+        gradient anymore but goes **backward**. I suspect this is due to some
+        conditions that are not fulfilled by the problem (convexity, continuity,
+        condition on the projection, ...?), but I do not have any proof yet.
 
-    :param density_matrix: the current trial density matrix.
-    :param projector_matrices: the projectors used to measure the given
-        observed frequencies.
-    :param observed_frequencies: the frequencies computed from the hardware
-        returns.
-    :param gradient: the value of the log likelyhood gradient at the given
-        density matrix.
-    :param previous_gradient_step: the gradient step that has been used
-        previously. Used as a starting point for the gradient step line search.
-    :param alpha: unused parameter.
-    :param beta: unused parameter.
+        See https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf
     """
     current_negative_log_likelyhood = negative_log_likelyhood(
         density_matrix, projector_matrices, observed_frequencies
@@ -199,33 +213,40 @@ def reconstruct_density_matrix(
     verbose: bool = False,
     warning_threshold: float = 1e-3,
 ) -> numpy.ndarray:
-    """
-    Reconstruct the density matrix from observations using projected gradient descent.
+    """Reconstruct the density matrix from observations using projected gradient descent.
 
-    :param empirical_frequencies: the estimated frequencies as a mapping
-        {basis_change_str -> {state -> frequency}} where basis_change_str is
-        the name of the quantum circuit performing the basis change, state is
-        either "0" or "1" for 1-qubit and frequency is the estimated frequency.
-    :param projector_vectors: the states we project in before each measurement.
-        Each entry in projector_matrices can be computed from projector_vectors
-        but we require both as parameters to save computations.
-    :max_iter: maximum number of iterations performed.
-    :param eps: a threshold to stop the optimisation. If the previous descent
-        step has a Frobenius norm lower than this threshold, the gradient
-        descent is considered as converged and the result is returned without
-        performing more descent iteration.
-    :param alpha: parameter for the backtracking line search. See the
-        line_search function documentation for more explanations.
-    :param beta: parameter for the backtracking line search. See the
-        line_search function documentation for more explanations.
-    :param verbose: if True, messages about the current iteration and the
-        convergence of the projected gradient descent are printed to stdout.
-    :param warning_threshold: a threshold to warn about non-convergence.
-        If the last descent step has a Frobenius norm higher than this
-        threshold, the gradient descent is considered as non-converged and a
-        warning is issued.
-    :return: the density matrix that maximise the likelyhood cost function (or
-        equivalently minimise the negative log likelyhood cost function).
+    Args:
+        empirical_frequencies: the estimated frequencies as a mapping
+            `{basis_change_str -> {state -> frequency}}` where
+            `basis_change_str` is the name of the quantum circuit
+            performing the basis change, state is either "0" or "1" for
+            1-qubit and frequency is the estimated frequency.
+        projector_vectors: the states we project in before each
+            measurement. Each entry in projector_matrices can be
+            computed from projector_vectors but we require both as
+            parameters to save computations.
+        max_iter: maximum number of iterations performed.
+        eps: a threshold to stop the optimisation. If the previous
+            descent step has a Frobenius norm lower than this threshold,
+            the gradient descent is considered as converged and the
+            result is returned without performing more descent
+            iteration.
+        alpha: parameter for the backtracking line search. See the
+            line_search function documentation for more explanations.
+        beta: parameter for the backtracking line search. See the
+            line_search function documentation for more explanations.
+        verbose: if True, messages about the current iteration and the
+            convergence of the projected gradient descent are printed to
+            stdout.
+        warning_threshold: a threshold to warn about non-convergence. If
+            the last descent step has a Frobenius norm higher than this
+            threshold, the gradient descent is considered as non-
+            converged and a warning is issued.
+
+    Returns:
+        the density matrix that maximise the likelyhood cost function
+        (or equivalently minimise the negative log likelyhood cost
+        function).
     """
     # Make everything a numpy array.
     empirical_frequencies = numpy.asarray(empirical_frequencies)
@@ -300,14 +321,18 @@ def frequencies_to_grad_reconstruction(
     This function uses the Maximum Likelyhood Estimation method and a
     projected gradient descent to minimise the negative log likelyhood
     cost function. Details about the actual optimisation process can be
-    found in the reconstruct_density_matrix function.
+    found in the `reconstruct_density_matrix` function.
 
-    :param frenquencies: the estimated frequencies as a list of mappings
-        {basis_change_str -> {state -> frequency}} where basis_change_str is
-        the name of the quantum circuit performing the basis change, state is
-        either "0" or "1" for 1-qubit and frequency is the estimated frequency.
-    :param basis: the tomography basis used.
-    :return: the reconstructed density matrix.
+    Args:
+        frenquencies: the estimated frequencies as a list of mappings
+            `{basis_change_str -> {state -> frequency}}` where
+            basis_change_str is the name of the quantum circuit
+            performing the basis change, state is either "0" or "1" for
+            1-qubit and frequency is the estimated frequency.
+        basis: the tomography basis used.
+
+    Returns:
+        the reconstructed density matrix.
     """
     density_matrices: list[numpy.ndarray] = []
     # This reconstruction could potentially be performed in parallel.
@@ -336,20 +361,24 @@ def post_process_tomography_results_grad(
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,
 ) -> list[numpy.ndarray]:
-    """
-    Compute and return the density matrix computed via state tomography.
+    """Compute and return the density matrix computed via state tomography.
 
     This function uses the Maximum Likelyhood Estimation method.
 
-    :param result: the Result instance returned by the QPU after executing all
-        the circuits returned by the one_qubit_tomography_circuits function.
-    :param tomographied_circuit: the quantum circuit instance that is currently
-        tomographied. Used to recover the circuit name.
+    Args:
+        result: the Result instance returned by the QPU after executing
+            all the circuits returned by the `one_qubit_tomography_circuits`
+            function.
+        tomographied_circuit: the quantum circuit instance that is
+            currently tomographied. Used to recover the circuit name.
+        basis: the basis in which the measurements will be done.
+        qubit_number: the number of qubits the parallel 1-qubit
+            tomography should be performed on. Default to 1, i.e. no
+            parallel execution.
 
-    :param basis: the basis in which the measurements will be done.
-    :param qubit_number: the number of qubits the parallel 1-qubit tomography
-        should be performed on. Default to 1, i.e. no parallel execution.
-    :return: the 2 by 2 density matrix representing the prepared quantum state.
+    Returns:
+        the 2 by 2 density matrix representing the prepared quantum
+        state.
     """
     # Compute the frequencies
     frequencies: list[dict[str, Counts]] = compute_frequencies(

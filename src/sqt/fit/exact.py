@@ -6,12 +6,15 @@ from qiskit_aer import AerSimulator
 def get_one_qubit_exact_density_matrix(
     circuit: QuantumCircuit,
 ) -> numpy.ndarray:
-    """
-    Compute and return the exact density matrix.
+    """Compute and return the exact density matrix.
 
-    :param circuit: the quantum circuit instance that is currently
-        tomographied. Used to recover the circuit name.
-    :return: the 2 by 2 density matrix representing the prepared quantum state.
+    Args:
+        circuit: the quantum circuit instance that is currently
+            tomographied. Used to recover the circuit name.
+
+    Returns:
+        the 2 by 2 density matrix representing the prepared quantum
+        state.
     """
     simulator = AerSimulator(method="density_matrix")
     circuit_copy: QuantumCircuit = circuit.copy()

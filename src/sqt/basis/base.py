@@ -7,7 +7,7 @@ from qiskit_aer import AerSimulator
 
 from sqt import _constants
 from sqt._maths_helpers import couter
-from sqt._typing import QuantumState, ComplexMatrix
+from sqt._typing import ComplexMatrix, QuantumState
 
 
 class BaseMeasurementBasis(abc.ABC):
@@ -28,7 +28,8 @@ class BaseMeasurementBasis(abc.ABC):
         circuits that are needed to perform the different measurements in
         the desired basis.
 
-        :return: an iterable on the basis change QuantumCircuit instances.
+        Returns:
+            an iterable on the basis change QuantumCircuit instances.
         """
         pass
 
@@ -53,6 +54,9 @@ class BaseMeasurementBasis(abc.ABC):
         U_{i in range(self.size)} {|phi_i><phi_i|, I - |phi_i><phi_i|}
 
         This only works for 1-qubit basis.
+
+        Returns:
+            the states that represent the measurement basis.
         """
         if not self._projector_states:
             simulator = AerSimulator()
@@ -82,7 +86,8 @@ class BaseMeasurementBasis(abc.ABC):
 
         This only works for 1-qubit basis.
 
-        :return: the 1-qubit projectors implemented by this basis.
+        Returns:
+            the 1-qubit projectors implemented by this basis.
         """
         if not self._projectors:
             for state in self.projector_states:

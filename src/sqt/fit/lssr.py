@@ -11,8 +11,7 @@ from sqt.fit._helpers import compute_frequencies
 def _make_positive_semidefinite(
     mat: numpy.ndarray, epsilon: float = 0
 ) -> numpy.ndarray:
-    """
-    Rescale a Hermitian matrix to nearest postive semidefinite matrix.
+    """Rescale a Hermitian matrix to nearest postive semidefinite matrix.
 
     From https://github.com/Qiskit/qiskit-ignis/blob/81955597ebabe1870088e4adc606f7ad2d71ffa8/qiskit/ignis/verification/tomography/fitters/lstsq_fit.py#L124
 
@@ -20,15 +19,21 @@ def _make_positive_semidefinite(
         [1] J Smolin, JM Gambetta, G Smith, Phys. Rev. Lett. 108, 070502
             (2012). Open access: arXiv:1106.5458 [quant-ph].
 
-    :note: this function looks very much like the projection operation in the grad.py
+    Notes:
+        this function looks very much like the projection operation in the grad.py
         file. It might be factored out in the future.
 
-    :param mat: a hermitian matrix.
-    :param epsilon: (default: 0) the threshold for setting eigenvalues to
-        zero. If epsilon > 0 positive eigenvalues below epsilon will also
-        be set to zero.
-    :raise ValueError: If epsilon is negative
-    :returns: The input matrix rescaled to have non-negative eigenvalues.
+    Args:
+        mat: a hermitian matrix.
+        epsilon: (default: 0) the threshold for setting eigenvalues to
+            zero. If epsilon > 0 positive eigenvalues below epsilon will
+            also be set to zero.
+
+    Raises:
+        ValueError: If epsilon is negative
+
+    Returns:
+        The input matrix rescaled to have non-negative eigenvalues.
     """
     if epsilon is not None and epsilon < 0:
         raise ValueError("epsilon must be non-negative.")
@@ -77,24 +82,30 @@ def frequencies_to_lssr_reconstruction(
     Finally the density matrix rho is computed as the solution to the linear
     system
 
-    A rho = p
+    ``A rho = p``
 
     This method does not ensure that rho is a density matrix as it might, due
     to imprecisions in p which might come from the noisy hardware, end up being
     non-physical. This is something TODO.
 
-    :param frenquencies: the estimated frequencies as a list of mappings
-        {basis_change_str -> {state -> frequency}} where basis_change_str is
-        the name of the quantum circuit performing the basis change, state is
-        either "0" or "1" for 1-qubit and frequency is the estimated frequency.
-    :param basis: the tomography basis used.
-    :param epsilon: a small float that is used to warn if the projection used for
-        LSSR method changes too much the matrix. Basically, for a computed and
-        non-necessarily semi-definite positive matrix rho, if
-        || rho - proj(rho) || > epsilon where proj(.) is a projector to the space
-        of semi-definite positive matrices, then a warning will be issued.
-    :param verbose: if True, print warnings and information about the optimisation.
-    :return: the reconstructed density matrix.
+    Args:
+        frenquencies: the estimated frequencies as a list of mappings
+            `{basis_change_str -> {state -> frequency}}` where
+            basis_change_str is the name of the quantum circuit
+            performing the basis change, state is either "0" or "1" for
+            1-qubit and frequency is the estimated frequency.
+        basis: the tomography basis used.
+        epsilon: a small float that is used to warn if the projection
+            used for LSSR method changes too much the matrix. Basically,
+            for a computed and non-necessarily semi-definite positive
+            matrix rho, if `|| rho - proj(rho) || > epsilon` where `proj(.)`
+            is a projector to the space of semi-definite positive
+            matrices, then a warning will be issued.
+        verbose: if ``True``, print warnings and information about the
+            optimisation.
+
+    Returns:
+        the reconstructed density matrix.
     """
     density_matrices: list[numpy.ndarray] = []
     # This reconstruction could potentially be performed in parallel.
@@ -138,8 +149,7 @@ def post_process_tomography_results_lssr(
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,
 ) -> list[numpy.ndarray]:
-    """
-    Compute and return the density matrix computed via state tomography.
+    """Compute and return the density matrix computed via state tomography.
 
     This function constructs an observable matrix A that contains all the
     projectors of the observables used in the circuits submitted to the QPU.
@@ -159,14 +169,20 @@ def post_process_tomography_results_lssr(
     to imprecisions in p which might come from the noisy hardware, end up being
     non-physical. This is something TODO.
 
-    :param result: the Result instance returned by the QPU after executing all
-        the circuits returned by the one_qubit_tomography_circuits function.
-    :param tomographied_circuit: the quantum circuit instance that is currently
-        tomographied. Used to recover the circuit name.
-    :param basis: the basis in which the measurements will be done.
-    :param qubit_number: the number of qubits the parallel 1-qubit tomography
-        should be performed on. Default to 1, i.e. no parallel execution.
-    :return: the 2 by 2 density matrix representing the prepared quantum state.
+    Args:
+        result: the Result instance returned by the QPU after executing
+            all the circuits returned by the
+            one_qubit_tomography_circuits function.
+        tomographied_circuit: the quantum circuit instance that is
+            currently tomographied. Used to recover the circuit name.
+        basis: the basis in which the measurements will be done.
+        qubit_number: the number of qubits the parallel 1-qubit
+            tomography should be performed on. Default to 1, i.e. no
+            parallel execution.
+
+    Returns:
+        the 2 by 2 density matrix representing the prepared quantum
+        state.
     """
     # Compute the frequencies
     frequencies: list[dict[str, Counts]] = compute_frequencies(

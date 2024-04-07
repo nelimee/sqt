@@ -9,12 +9,14 @@ def couter(a: numpy.ndarray, b: numpy.ndarray) -> numpy.ndarray:
 
 
 def bloch_vector_to_density_matrix(s: numpy.ndarray) -> numpy.ndarray:
-    """
-    Take a 3-dimensional Bloch vector and returns the corresponding density matrix.
+    """Take a 3-dimensional Bloch vector and returns the corresponding density matrix.
 
-    :param s: A 3-dimensional real vector representing a point within the Bloch
-        sphere.
-    :return: a 2 by 2 density matrix corresponding to the given state.
+    Args:
+        s: A 3-dimensional real vector representing a point within the
+            Bloch sphere.
+
+    Returns:
+        a 2 by 2 density matrix corresponding to the given state.
     """
     return (
         _constants.I + s[0] * _constants.X + s[1] * _constants.Y + s[2] * _constants.Z

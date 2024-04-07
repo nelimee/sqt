@@ -29,12 +29,15 @@ def _parallelise_one_qubit_tomography_circuits(
     This function duplicates the circuits given in one_qubit_quantum_circuits
     to execute them in parallel on qubit_number qubits.
 
-    :param one_qubit_quantum_circuits: a list of quantum circuits that will be
-        parallelised over qubit_number qubits.
-    :param qubit_number: the number of qubits the parallel 1-qubit tomography
-        should be performed on.
-    :return: the quantum circuits that should be executed to perform the state
-        tomography.
+    Args:
+        one_qubit_quantum_circuits: a list of quantum circuits that will
+            be parallelised over qubit_number qubits.
+        qubit_number: the number of qubits the parallel 1-qubit
+            tomography should be performed on.
+
+    Returns:
+        the quantum circuits that should be executed to perform the
+        state tomography.
     """
     quantum_circuits: list[QuantumCircuit] = list()
     for circuit in one_qubit_quantum_circuits:
@@ -63,15 +66,19 @@ def one_qubit_tomography_circuits(
     given quantum circuit to produce the quantum circuits that should be
     executed to perform the 1-qubit quantum state tomography.
 
-    :param tomographied_circuit: a quantum circuit that prepares the state to
-        be tomographied.
-    :param qubit_number: the number of qubits the parallel 1-qubit tomography
-        should be performed on. Default to 1, i.e. no parallel execution.
-    :param basis: the basis in which the measurements will be done.
-    :param add_barrier: if True, add a barrier between the state preparation
-        and the measurement basis change.
-    :return: the quantum circuits that should be executed to perform the state
-        tomography in the given basis.
+    Args:
+        tomographied_circuit: a quantum circuit that prepares the state
+            to be tomographied.
+        qubit_number: the number of qubits the parallel 1-qubit
+            tomography should be performed on. Default to 1, i.e. no
+            parallel execution.
+        basis: the basis in which the measurements will be done.
+        add_barrier: if True, add a barrier between the state
+            preparation and the measurement basis change.
+
+    Returns:
+        the quantum circuits that should be executed to perform the
+        state tomography in the given basis.
     """
     quantum_circuits: list[QuantumCircuit] = list()
 

@@ -6,8 +6,8 @@ methods should either be already compatible for multi-qubit state tomography or
 should only require a small investment to adapt.
 
 The package provides 2 main modules:
-- qtom.basis that implements several tomography basis.
-- qtom.fit that provides several optimisation methods to reconstruct the density
+- sqt.basis that implements several tomography basis.
+- sqt.fit that provides several optimisation methods to reconstruct the density
   matrix of the measured state from the measurements.
 """
 

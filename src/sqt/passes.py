@@ -5,11 +5,11 @@ import scipy.linalg
 from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag
 from qiskit.dagcircuit import DAGCircuit
-from qiskit.transpiler import TransformationPass
+from qiskit.transpiler import PassManager, TransformationPass
 
 
 def _mod_2pi(angle: float) -> float:
-    """Return the given angle within the range [0, 2pi]."""
+    """Return the given angle within the range `[0, 2pi]`."""
     if angle < 0:
         angle += math.ceil(-angle / (2 * math.pi)) * 2 * math.pi
     elif angle > 2 * math.pi:
@@ -18,7 +18,7 @@ def _mod_2pi(angle: float) -> float:
 
 
 class Optimize1qGateIntoRzSX(TransformationPass):
-    """Optimise any 1-qubit gate chain into 5 gates Rz SX Rz SX Rz.
+    """Optimise any 1-qubit gate chain into 5 gates ``Rz SX Rz SX Rz``.
 
     This is a strictly inferior implementation of the
     qiskit.transpiler.passes.Optimize1qGatesDecomposition pass, but
@@ -27,14 +27,17 @@ class Optimize1qGateIntoRzSX(TransformationPass):
     """
 
     def __init__(self):
-        """Optimise any 1-qubit gate chain into 5 gates Rz SX Rz SX Rz."""
+        """Optimise any 1-qubit gate chain into 5 gates ``Rz SX Rz SX Rz``."""
         super().__init__()
 
     def run(self, dag: DAGCircuit) -> DAGCircuit:
         """Run the Optimize1qGateIntoRzSX pass on `dag`.
 
-        :param dag: the DAG to be optimized.
-        :return: the optimized DAG.
+        Args:
+            dag: the DAG to be optimized.
+
+        Returns:
+            the optimized DAG.
         """
         runs = dag.collect_1q_runs()
         for r in runs:
@@ -69,9 +72,6 @@ class Optimize1qGateIntoRzSX(TransformationPass):
 
 def compile_circuits(circuits: list[QuantumCircuit]) -> list[QuantumCircuit]:
     """Merge 1-qubit gates with the Optimize1qGateIntoRzSX pass."""
-    from qiskit.transpiler import PassManager
-
-    from sqt.passes import Optimize1qGateIntoRzSX
 
     pass_sspin = Optimize1qGateIntoRzSX()
     pm_sspin = PassManager(passes=[pass_sspin])
