@@ -141,26 +141,6 @@ def line_search(
     The backtracking line search try to find a good gradient step (or learning
     rate) in order to fullfil the Wolfe condition.
 
-    :warning:
-    This method is currently not working correctly and systematically returns
-    a value of 0.001 that has been empirically determined as sufficiently small
-    for the optimisation problems I had. This value might be too large for
-    other optimisation problems.
-
-    Some observations on this method: it seems like the line search does not
-    work because there are cases where the projection makes the actual descent
-    direction in the oposite direction of the gradient. In other words, if d
-    is the descent direction, obtained with the formula
-
-    d = proj(rho - gradient_step * gradient) - rho
-
-    then there are cases where <d , gradient> < 0, i.e. d does not follow the
-    gradient anymore but goes **backward**. I suspect this is due to some
-    conditions that are not fulfilled by the problem (convexity, continuity,
-    condition on the projection, ...?), but I do not have any proof yet.
-
-    See https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf
-
     Args:
         density_matrix: the current trial density matrix.
         projector_matrices: the projectors used to measure the given
@@ -172,8 +152,30 @@ def line_search(
         previous_gradient_step: the gradient step that has been used
             previously. Used as a starting point for the gradient step
             line search.
-        alpha: unused parameter.
-        beta: unused parameter.
+        c: parameter from Section 1.2 The Basic Gradient Projection Method
+            of https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf.
+        gamma: parameter from Section 1.2 The Basic Gradient Projection Method
+            of https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf.
+
+    Todo:
+        This method is currently not working correctly and systematically returns
+        a value of 0.001 that has been empirically determined as sufficiently small
+        for the optimisation problems I had. This value might be too large for
+        other optimisation problems.
+
+        Some observations on this method: it seems like the line search does not
+        work because there are cases where the projection makes the actual descent
+        direction in the oposite direction of the gradient. In other words, if d
+        is the descent direction, obtained with the formula
+
+        d = proj(rho - gradient_step * gradient) - rho
+
+        then there are cases where <d , gradient> < 0, i.e. d does not follow the
+        gradient anymore but goes **backward**. I suspect this is due to some
+        conditions that are not fulfilled by the problem (convexity, continuity,
+        condition on the projection, ...?), but I do not have any proof yet.
+
+        See https://sites.math.washington.edu/~burke/crs/408/notes/nlp/gpa.pdf
     """
     current_negative_log_likelyhood = negative_log_likelyhood(
         density_matrix, projector_matrices, observed_frequencies
@@ -215,14 +217,15 @@ def reconstruct_density_matrix(
 
     Args:
         empirical_frequencies: the estimated frequencies as a mapping
-            {basis_change_str -> {state -> frequency}} where
-            basis_change_str is the name of the quantum circuit
+            `{basis_change_str -> {state -> frequency}}` where
+            `basis_change_str` is the name of the quantum circuit
             performing the basis change, state is either "0" or "1" for
             1-qubit and frequency is the estimated frequency.
         projector_vectors: the states we project in before each
             measurement. Each entry in projector_matrices can be
             computed from projector_vectors but we require both as
             parameters to save computations.
+        max_iter: maximum number of iterations performed.
         eps: a threshold to stop the optimisation. If the previous
             descent step has a Frobenius norm lower than this threshold,
             the gradient descent is considered as converged and the
@@ -239,7 +242,6 @@ def reconstruct_density_matrix(
             the last descent step has a Frobenius norm higher than this
             threshold, the gradient descent is considered as non-
             converged and a warning is issued.
-    :max_iter: maximum number of iterations performed.
 
     Returns:
         the density matrix that maximise the likelyhood cost function
@@ -319,11 +321,11 @@ def frequencies_to_grad_reconstruction(
     This function uses the Maximum Likelyhood Estimation method and a
     projected gradient descent to minimise the negative log likelyhood
     cost function. Details about the actual optimisation process can be
-    found in the reconstruct_density_matrix function.
+    found in the `reconstruct_density_matrix` function.
 
     Args:
         frenquencies: the estimated frequencies as a list of mappings
-            {basis_change_str -> {state -> frequency}} where
+            `{basis_change_str -> {state -> frequency}}` where
             basis_change_str is the name of the quantum circuit
             performing the basis change, state is either "0" or "1" for
             1-qubit and frequency is the estimated frequency.
@@ -365,8 +367,8 @@ def post_process_tomography_results_grad(
 
     Args:
         result: the Result instance returned by the QPU after executing
-            all the circuits returned by the
-            one_qubit_tomography_circuits function.
+            all the circuits returned by the `one_qubit_tomography_circuits`
+            function.
         tomographied_circuit: the quantum circuit instance that is
             currently tomographied. Used to recover the circuit name.
         basis: the basis in which the measurements will be done.

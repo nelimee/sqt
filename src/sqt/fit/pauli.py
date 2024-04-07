@@ -19,8 +19,8 @@ def frequencies_to_pauli_reconstruction(
     weighted sum.
 
     Args:
-        frequencies: a list of mappings {basis_change_string -> {state
-            -> frequency}} that is used to reconstruct the density
+        frequencies: a list of mappings `{basis_change_string -> {state
+            -> frequency}}` that is used to reconstruct the density
             matrix. The possible values for basis_change_string are
             given by the measurement basis used. For 1-qubit tomography
             experiment, state can be either "0" or "1".
@@ -53,8 +53,8 @@ def post_process_tomography_results_pauli(
 
     Args:
         result: the Result instance returned by the QPU after executing
-            all the circuits returned by the
-            one_qubit_tomography_circuits function.
+            all the circuits returned by the `one_qubit_tomography_circuits`
+            function.
         tomographied_circuit: the quantum circuit instance that is
             currently tomographied. Used to recover the circuit name.
         basis: the basis in which the measurements will be done.

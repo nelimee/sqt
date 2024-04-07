@@ -27,7 +27,7 @@ def frequencies_to_mle_reconstruction(
 
     Args:
         frenquencies: the estimated frequencies as a list of mappings
-            {basis_change_str -> {state -> frequency}} where
+            `{basis_change_str -> {state -> frequency}}` where
             basis_change_str is the name of the quantum circuit
             performing the basis change, state is either "0" or "1" for
             1-qubit and frequency is the estimated frequency.

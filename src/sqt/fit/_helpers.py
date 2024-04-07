@@ -13,23 +13,26 @@ def marginalise_all_counts(counts: Counts, qubit_number: int) -> list[Counts]:
     """Marginalise over all the qubits.
 
     Example:
-    counts = Counts({
-        0b001: 0.01,
-        0b010: 0.09,
-        0b110: 0.87,
-        0b111: 0.03,
-    })
-    qubit_number = 3
-    _marginalise_all_counts(counts, qubit_number) == [
-        Counts({0: 0.96, 1: 0.04}),
-        Counts({0: 0.01, 1: 0.99}),
-        Counts({0: 0.1, 1: 0.9})
-    ]
+        counts = Counts({
+            0b001: 0.01,
+            0b010: 0.09,
+            0b110: 0.87,
+            0b111: 0.03,
+        })
+        qubit_number = 3
+        _marginalise_all_counts(counts, qubit_number) == [
+            Counts({0: 0.96, 1: 0.04}),
+            Counts({0: 0.01, 1: 0.99}),
+            Counts({0: 0.1, 1: 0.9})
+        ]
 
-    :param counts: the results obtained from the backend.
-    :param qubit_number: the number of qubits measured. No key in counts
-        should be strictly greater than 2**qubit_number - 1
-    :return: a list of the marginalised counts for each qubits.
+    Args:
+        counts: the results obtained from the backend.
+        qubit_number: the number of qubits measured. No key in counts
+            should be strictly greater than ``2**qubit_number - 1``.
+
+    Returns:
+        a list of the marginalised counts for each qubits.
     """
     marginalised_counts: list[dict[int, float]] = [
         {0: 0, 1: 0} for _ in range(qubit_number)

@@ -19,7 +19,8 @@ def _make_positive_semidefinite(
         [1] J Smolin, JM Gambetta, G Smith, Phys. Rev. Lett. 108, 070502
             (2012). Open access: arXiv:1106.5458 [quant-ph].
 
-    :note: this function looks very much like the projection operation in the grad.py
+    Notes:
+        this function looks very much like the projection operation in the grad.py
         file. It might be factored out in the future.
 
     Args:
@@ -81,7 +82,7 @@ def frequencies_to_lssr_reconstruction(
     Finally the density matrix rho is computed as the solution to the linear
     system
 
-    A rho = p
+    ``A rho = p``
 
     This method does not ensure that rho is a density matrix as it might, due
     to imprecisions in p which might come from the noisy hardware, end up being
@@ -89,7 +90,7 @@ def frequencies_to_lssr_reconstruction(
 
     Args:
         frenquencies: the estimated frequencies as a list of mappings
-            {basis_change_str -> {state -> frequency}} where
+            `{basis_change_str -> {state -> frequency}}` where
             basis_change_str is the name of the quantum circuit
             performing the basis change, state is either "0" or "1" for
             1-qubit and frequency is the estimated frequency.
@@ -97,10 +98,10 @@ def frequencies_to_lssr_reconstruction(
         epsilon: a small float that is used to warn if the projection
             used for LSSR method changes too much the matrix. Basically,
             for a computed and non-necessarily semi-definite positive
-            matrix rho, if || rho - proj(rho) || > epsilon where proj(.)
+            matrix rho, if `|| rho - proj(rho) || > epsilon` where `proj(.)`
             is a projector to the space of semi-definite positive
             matrices, then a warning will be issued.
-        verbose: if True, print warnings and information about the
+        verbose: if ``True``, print warnings and information about the
             optimisation.
 
     Returns:

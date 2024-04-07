@@ -24,16 +24,13 @@ def submit(
             backend.
         backend: backend used to execute the given circuits.
         tags: tags for each of the submitted jobs.
-        **kwargs: forwarded to the backend.run method. Configuration of
+        **kwargs: forwarded to the ``backend.run`` method. Configuration of
             the runtime environment. Some examples of these
             configuration parameters include: "qobj_id", "qobj_header",
             "shots", "memory", "seed_simulator", "qubit_lo_freq",
             "meas_lo_freq", "qubit_lo_range", "meas_lo_range",
             "schedule_los", "meas_level", "meas_return", "meas_map",
             "memory_slot_size", "rep_time", and "parameter_binds".
-
-            Refer to the documentation on :func:`qiskit.compiler.assemble`
-            for details on these arguments.
     """
     job = backend.run(circuits, dynamic=False, job_tags=tags, **kwargs)
     return BaseJob.from_job(job, hub, group, project)  # type: ignore
@@ -61,7 +58,7 @@ def execute(
         job_name: prefix used for the job name. IBMQJobManager will add
             a suffix for each job.
         tags: tags for each of the submitted jobs.
-        **kwargs: forwarded to run_config. Configuration of the runtime
+        **kwargs: forwarded to ``run_config``. Configuration of the runtime
             environment. Some examples of these configuration parameters
             include: ``qobj_id``, ``qobj_header``, ``shots``,
             ``memory``, ``seed_simulator``, ``qubit_lo_freq``,

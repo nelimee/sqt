@@ -1,13 +1,13 @@
-from qiskit import QuantumCircuit
-
 import numpy
 import numpy.typing as npt
-
+from qiskit import QuantumCircuit
 
 from sqt.basis.base import BaseMeasurementBasis
 
 
-def get_equidistant_points(N: int) -> list[tuple[float, float, float]]:
+def get_equidistant_points(
+    approximate_point_number: int,
+) -> list[tuple[float, float, float]]:
     """Generate approximately n points evenly distributed accros the 3-d sphere.
 
     This function tries to find approximately n points (might be a little less
@@ -15,13 +15,25 @@ def get_equidistant_points(N: int) -> list[tuple[float, float, float]]:
 
     The algorithm used is described in
     https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf.
+
+    Args:
+        approximate_point_number: number of points that is wanted across the
+            unit sphere. This is only an approximate, this function will do its
+            best to stay as close as possible to this number, but the actual
+            number of points returned might (and likely will) be different from
+            this input value.
+
+    Returns:
+        a number ``m`` of points, with ``m`` close to ``n``, that are approximately
+        evenly spaced across the unit-sphere.
+
     """
     # Unit sphere
     r = 1
 
     points: list[tuple[float, float, float]] = list()
 
-    a = 4 * numpy.pi * r**2 / N
+    a = 4 * numpy.pi * r**2 / approximate_point_number
     d = numpy.sqrt(a)
     m_v = int(numpy.round(numpy.pi / d))
     d_v = numpy.pi / m_v
@@ -31,8 +43,8 @@ def get_equidistant_points(N: int) -> list[tuple[float, float, float]]:
         v = numpy.pi * (m + 0.5) / m_v
         # m_phi = int(numpy.round(2 * numpy.pi * numpy.sin(v / d_phi)))
         m_phi = int(numpy.round(2 * numpy.pi * numpy.sin(v) / d_phi))
-        for n in range(m_phi):
-            phi = 2 * numpy.pi * n / m_phi
+        for approximate_point_number in range(m_phi):
+            phi = 2 * numpy.pi * approximate_point_number / m_phi
             points.append(
                 (
                     numpy.sin(v) * numpy.cos(phi),
@@ -70,7 +82,7 @@ def point_to_circuit(point: tuple[float, float, float], name: str) -> QuantumCir
 
     Returns:
         a QuantumCircuit instance that prepare the state given by the
-        point parameter if the initial state is |0>.
+        point parameter, provided that the initial state is |0>.
     """
     circuit = QuantumCircuit(1, name=name)
     theta = numpy.arccos(point[2])
@@ -83,11 +95,22 @@ def point_to_circuit(point: tuple[float, float, float], name: str) -> QuantumCir
 def get_approximately_equidistant_circuits(
     approximate_point_number: int,
 ) -> list[QuantumCircuit]:
-    """Construct and returns circuits that are approximately equidistant.
+    """Construct and returns circuits that prepare quantum states that
+    are approximately equidistant.
 
-    This function will construct approximately approximate_point_number
+    This function will construct approximately ``approximate_point_number``
     quantum circuits that will prepare quantum states that are approximately
     equidistant when placed on the Bloch sphere.
+
+    Todo:
+        Each one of the returned circuit will have a name that is
+        the list representation of the point it prepares. This point can
+        be retrieved with the following code::
+
+            circuits = get_approximately_equidistant_circuits(10)
+            points = [eval(c.name) for c in circuits]
+
+        This should eventually be removed in favour of another way.
 
     Args:
         approximate_point_number: number of circuits that will be
@@ -96,12 +119,7 @@ def get_approximately_equidistant_circuits(
             or higher.
 
     Returns:
-        the generated circuits. Each circuit will have a name that is
-        the list representation of the point it prepares. This point can
-        be retrieved with the following code (yes it is ugly, I am
-        searching for a better alternative):
-            circuits = get_approximately_equidistant_circuits(10)
-            points = [eval(c.name) for c in circuits]
+        the generated circuits.
     """
     return [
         point_to_circuit(point, f"{point}")
