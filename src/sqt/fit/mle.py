@@ -124,7 +124,7 @@ def frequencies_to_mle_reconstruction(
 
 
 def post_process_tomography_results_mle(
-    result: Result,
+    result: Result | list[Result],
     tomographied_circuit: QuantumCircuit,
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,

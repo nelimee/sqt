@@ -356,7 +356,7 @@ def frequencies_to_grad_reconstruction(
 
 
 def post_process_tomography_results_grad(
-    result: Result,
+    result: Result | list[Result],
     tomographied_circuit: QuantumCircuit,
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,

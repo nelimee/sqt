@@ -24,12 +24,12 @@ _POST_PROCESSING = {
 
 def unpack_data(
     backup_filename: Path,
-) -> tuple[BaseJob, list[QuantumCircuit], BaseMeasurementBasis, str, int, int]:
+) -> tuple[list[BaseJob], list[QuantumCircuit], BaseMeasurementBasis, str, int, int]:
     print(f"Recovering data from '{backup_filename}'.")
     with open(backup_filename, "rb") as f:
         data = pickle.load(f)
     return (
-        BaseJob.from_dict(data["job"]),
+        [BaseJob.from_dict(job_json) for job_json in data["jobs"]],
         data["raw_circuits"],
         data["basis"],
         data["backend_name"],
@@ -65,10 +65,10 @@ def main():
     # )
     args = parser.parse_args()
 
-    (job, raw_circuits, basis, backend_name, qubit_number, shots) = unpack_data(
+    (jobs, raw_circuits, basis, backend_name, qubit_number, shots) = unpack_data(
         args.backup_filepath
     )
-    results: Result = job.result()
+    results: list[Result] = [job.result() for job in jobs]
     for post_processing_method_name in args.post_processing_method:
         print(f"Starting post-processing with '{post_processing_method_name}' method!")
         post_processing_method: ty.Callable[

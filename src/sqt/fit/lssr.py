@@ -144,7 +144,7 @@ def frequencies_to_lssr_reconstruction(
 
 
 def post_process_tomography_results_lssr(
-    result: Result,
+    result: Result | list[Result],
     tomographied_circuit: QuantumCircuit,
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,

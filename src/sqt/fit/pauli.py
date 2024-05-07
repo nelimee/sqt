@@ -44,7 +44,7 @@ def frequencies_to_pauli_reconstruction(
 
 
 def post_process_tomography_results_pauli(
-    result: Result,
+    result: Result | list[Result],
     tomographied_circuit: QuantumCircuit,
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,
