@@ -1,5 +1,5 @@
 import numpy
-from qiskit import QuantumCircuit
+from qiskit import QiskitError, QuantumCircuit
 from qiskit.result import Result
 
 from sqt.basis.base import BaseMeasurementBasis
@@ -44,7 +44,7 @@ def marginalise_all_counts(counts: Counts, qubit_number: int) -> list[Counts]:
 
 
 def compute_frequencies(
-    result: Result,
+    result: Result | list[Result],
     tomographied_circuit: QuantumCircuit,
     basis: BaseMeasurementBasis,
     qubit_number: int = 1,
@@ -73,6 +73,17 @@ def compute_frequencies(
         the basis change, state is either 0 or 1 and frequency is the
         estimated frequency.
     """
+
+    def get_counts(name: str):
+        if isinstance(result, list):
+            for res in result:
+                try:
+                    return res.get_counts(name)
+                except QiskitError:
+                    continue
+        else:
+            return result.get_counts(name)
+
     # Compute the probabilities
     frequencies: list[dict[str, Counts]] = [dict() for _ in range(qubit_number)]
     tc_name: str = tomographied_circuit.name
@@ -82,7 +93,7 @@ def compute_frequencies(
             get_tomography_circuit_name(tc_name, basis_change_name),
             qubit_number,
         )
-        counts: Counts = Counts(result.get_counts(parallelised_circuit_name))  # type: ignore
+        counts: Counts = Counts(get_counts(parallelised_circuit_name))  # type: ignore
         counts_list: list[Counts] = marginalise_all_counts(counts, qubit_number)
         for qubit_index, qubit_counts in enumerate(counts_list):
             frequencies[qubit_index][basis_change_name] = qubit_counts
