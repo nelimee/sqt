@@ -290,14 +290,12 @@ def reconstruct_density_matrix(
         # Compute the difference between the previous density matrix estimate and
         # the new one. This is usefull for the stopping criterion.
         movement_norm = float(
-            numpy.linalg.norm(updated_density_matrix -
-                              density_matrix, ord="fro")
+            numpy.linalg.norm(updated_density_matrix - density_matrix, ord="fro")
         )
         density_matrix = updated_density_matrix
 
         if verbose:
-            print(f"{it+1} / {max_iter}  --->  {movement_norm}",
-                  end="\n", flush=True)
+            print(f"{it+1} / {max_iter}  --->  {movement_norm}", end="\n", flush=True)
         if movement_norm < eps:
             break
 
