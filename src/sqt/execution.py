@@ -7,9 +7,9 @@ from sqt.job import BaseJob
 def submit(
     circuits: list[QuantumCircuit],
     backend: Backend,
-    hub: str,
-    group: str,
-    project: str,
+    hub: str | None = None,
+    group: str | None = None,
+    project: str | None = None,
     tags: list[str] | None = None,
     **kwargs,
 ) -> BaseJob:
@@ -39,9 +39,9 @@ def submit(
 def execute(
     circuits: list[QuantumCircuit],
     backend: Backend,
-    hub: str,
-    group: str,
-    project: str,
+    hub: str | None = None,
+    group: str | None = None,
+    project: str | None = None,
     tags: list[str] | None = None,
     **kwargs,
 ):

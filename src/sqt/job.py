@@ -34,9 +34,15 @@ class BaseJob(ABC):
 
     @staticmethod
     def from_job(
-        job: RuntimeJob | AerJob, hub: str, group: str, project: str
+        job: RuntimeJob | AerJob,
+        hub: str | None = None,
+        group: str | None = None,
+        project: str | None = None,
     ) -> "BaseJob":
         if isinstance(job, RuntimeJob):
+            assert hub is not None
+            assert group is not None
+            assert project is not None
             return BaseJob._from_ibmq_runtime_job(job, hub, group, project)
         elif isinstance(job, AerJob):
             return BaseJob._from_aer_job(job)
