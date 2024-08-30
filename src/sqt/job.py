@@ -4,7 +4,7 @@ import typing as ty
 from abc import ABC, abstractmethod
 
 from qiskit.result import Result
-from qiskit_aer.jobs import AerJob, AerJobSet
+from qiskit_aer.jobs import AerJob
 from qiskit_ibm_runtime import QiskitRuntimeService, RuntimeJob
 
 
@@ -34,11 +34,11 @@ class BaseJob(ABC):
 
     @staticmethod
     def from_job(
-        job: RuntimeJob | AerJob | AerJobSet, hub: str, group: str, project: str
+        job: RuntimeJob | AerJob, hub: str, group: str, project: str
     ) -> "BaseJob":
         if isinstance(job, RuntimeJob):
             return BaseJob._from_ibmq_runtime_job(job, hub, group, project)
-        elif isinstance(job, (AerJob, AerJobSet)):
+        elif isinstance(job, AerJob):
             return BaseJob._from_aer_job(job)
         else:
             raise RuntimeError(f"Unsupported job type: {type(job)}")
@@ -50,7 +50,7 @@ class BaseJob(ABC):
         return RemoteJob(job.job_id(), hub, group, project)
 
     @staticmethod
-    def _from_aer_job(job: AerJob | AerJobSet) -> "LocalJob":
+    def _from_aer_job(job: AerJob) -> "LocalJob":
         return LocalJob(job.result())
 
 
@@ -100,7 +100,8 @@ class RemoteJob(BaseJob):
             )
             if not self._service.active_account():
                 raise RuntimeError(
-                    f"Could not load account with '{self._hub}' '{self._group}' '{self._project}'."
+                    f"Could not load account with '{self._hub}' '{
+                        self._group}' '{self._project}'."
                 )
         return self._service
 

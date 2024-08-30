@@ -119,7 +119,7 @@ def project(matrix: numpy.ndarray) -> numpy.ndarray:
     mu = (mu - 1) / eigenvalue_counter
     # Re-construct the density matrix with only the most significant
     # eigenvalues.
-    density_matrix = numpy.zeros((dimension, dimension), dtype=numpy.complex_)
+    density_matrix = numpy.zeros((dimension, dimension), dtype=numpy.complex64)
     for j in range(eigenvalue_counter):
         weight = eigvals[j] - mu
         eigvector = eigvecs[:, j] / numpy.linalg.norm(eigvecs[:, j])
@@ -257,7 +257,7 @@ def reconstruct_density_matrix(
     projector_matrices = [couter(proj, proj) for proj in projectors]
     gradient_step: float = 1.0
     movement_norm: float = 0.0
-    density_matrix = numpy.eye(dimension, dtype=numpy.complex_) / dimension
+    density_matrix = numpy.eye(dimension, dtype=numpy.complex64) / dimension
 
     for it in range(max_iter):
         # Estimate the gradient for this iteration
@@ -290,17 +290,20 @@ def reconstruct_density_matrix(
         # Compute the difference between the previous density matrix estimate and
         # the new one. This is usefull for the stopping criterion.
         movement_norm = float(
-            numpy.linalg.norm(updated_density_matrix - density_matrix, ord="fro")
+            numpy.linalg.norm(updated_density_matrix -
+                              density_matrix, ord="fro")
         )
         density_matrix = updated_density_matrix
 
         if verbose:
-            print(f"{it+1} / {max_iter}  --->  {movement_norm}", end="\n", flush=True)
+            print(f"{it+1} / {max_iter}  --->  {movement_norm}",
+                  end="\n", flush=True)
         if movement_norm < eps:
             break
 
     if movement_norm > warning_threshold:
-        print(f"Warning! Gradient descent finished with a step of {movement_norm}.")
+        print(f"Warning! Gradient descent finished with a step of {
+              movement_norm}.")
     if verbose:
         cost = negative_log_likelyhood(
             density_matrix, projector_matrices, empirical_frequencies

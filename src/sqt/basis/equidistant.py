@@ -58,7 +58,7 @@ def get_equidistant_points(
 def points_to_xyz(
     points: list[tuple[float, float, float]],
 ) -> tuple[
-    npt.NDArray[numpy.float_], npt.NDArray[numpy.float_], npt.NDArray[numpy.float_]
+    npt.NDArray[numpy.float64], npt.NDArray[numpy.float64], npt.NDArray[numpy.float64]
 ]:
     """Transform a list of 3-dimensional points into 3 lists of coordinates.
 
