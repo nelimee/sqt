@@ -122,7 +122,7 @@ def get_approximately_equidistant_circuits(
         the generated circuits.
     """
     return [
-        point_to_circuit(point, f"{point}")
+        point_to_circuit(point, str(tuple(map(float, point))))
         for point in get_equidistant_points(approximate_point_number)
     ]
 
